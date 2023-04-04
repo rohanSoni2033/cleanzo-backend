@@ -1,6 +1,6 @@
 data
 node_modules
-config.env
+.env
 tests
 package-lock.json
 .vscode
