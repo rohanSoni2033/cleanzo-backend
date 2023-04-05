@@ -1,35 +1,18 @@
-const bookingStatus = {
-  PENDING: "pending",
-  COMPLETED: "completed",
-  FAILED: "failed",
-  CANCELED: "canceled",
-}
+import Factory from "./Factory";
 
-class Booking {
-  constructor(
-    id,
-    userId,
-    bookedServiceId,
-    userVehicleId,
-    totalPrice,
-    status,
-    paymentStatus,
-    bookingLocation,
-    bookingSlot
-  ) {
+export class BookingDAO {
+  constructor(id, userId, bookedServiceId, userVehicleId, totalPrice, bookingStatus, paymentStatus, userAddress, userLocation, bookingSlot) {
     this.id = id;
     this.userId = userId;
     this.bookedServiceId = bookedServiceId;
-    this.userVehicleModel = userVehicleModel;
+    this.userVehicleId = userVehicleId;
     this.totalPrice = totalPrice;
-    this.status = status;
+    this.bookingStatus = bookingStatus;
     this.paymentStatus = paymentStatus;
-    this.bookingLocation = bookingLocation;
+    this.userAddress = userAddress;
+    this.userLocation = userLocation;
     this.bookingSlot = bookingSlot;
   }
-
-  static async create(userId, bookedServiceId, paymentStatus) {
-    const createdAt = Date.now();
-    const status = bookingStatus.PENDING;
-  }
 }
+
+export default new Factory("bookings");
