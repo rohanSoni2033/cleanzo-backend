@@ -4,6 +4,7 @@ import GlobalError from './../error/GlobalError.js';
 import asyncHandler from './../utils/asyncHandler.js';
 import jwt from 'jsonwebtoken';
 import errmsg from '../error/errorMessages.js';
+
 import {
   verifyMobileNumberUsingOTP,
   verifyOTP,
@@ -93,16 +94,16 @@ export const memberLoginController = asyncHandler(async (req, res, next) => {
     return next(new GlobalError(errmsg.NO_PASSWORD, statusCode.BAD_REQUEST));
   }
 
-  const member = await User.getOne({
+  const account = await User.getOne({
     mobileNumber: mobileNumber,
-    userType: 'member',
+    $or: [{ userType: 'team' }, { userType: 'admin' }],
   });
 
-  if (!member) {
+  if (!account) {
     return next(new GlobalError(errmsg.NO_MEMBER_FOUND, statusCode.NOT_FOUND));
   }
 
-  const isPasswordCorrect = password === member.password;
+  const isPasswordCorrect = password === account.password;
 
   if (!isPasswordCorrect) {
     return next(new GlobalError(errmsg.WRONG_PASSWORD, statusCode.BAD_REQUEST));
@@ -191,52 +192,3 @@ export const accessPermission = (...userType) => {
     );
   });
 };
-
-export const updateMobileNumber = asyncHandler(async (req, res, next) => {
-  const { newMobileNumber } = req.body;
-
-  if (!newMobileNumber) {
-    return next(
-      new GlobalError(
-        'Please provide a new mobile number to updater',
-        statusCode.BAD_REQUEST
-      )
-    );
-  }
-
-  const currentUser = await User.getOneById(req.id);
-
-  if (!currentUser) {
-    return next(
-      new GlobalError(
-        'User not found with this mobile number, try again',
-        statusCode.BAD_REQUEST
-      )
-    );
-  }
-
-  const isMobileNumberExits = await User.getOne({
-    mobileNumber: newMobileNumber,
-  });
-
-  if (isMobileNumberExits) {
-    return next(
-      new GlobalError(
-        'mobile number is already in use, please try another',
-        statusCode.BAD_REQUEST
-      )
-    );
-  }
-
-  const { hashedString, otpExpiresTimestamp } =
-    await verifyMobileNumberUsingOTP(newMobileNumber);
-
-  res.status(statusCode.OK).json({
-    status: 'success',
-    data: {
-      mobileNumber: newMobileNumber,
-      otpExpiresTimestamp,
-      hashedString,
-    },
-  });
-});
