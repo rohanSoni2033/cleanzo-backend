@@ -1,18 +1,10 @@
 const globalErrorHandler = (err, res) => {
-  let statusCode, message;
-
-  if (!err.isOperational) {
-    if (err.name === 'BodyParserError') {
-      message = err.message;
-    }
-  } else {
-    message = err.message || 'something went wrong';
-    statusCode = err.statusCode || 404;
-  }
+  const message = err.message || 'something went wrong';
+  const statusCode = err.statusCode || 404;
 
   if (process.env.NODE_ENV === 'development') {
     let stack = err.stack || 'stack not defined';
-    return res.status(statusCode || 404).json({
+    return res.status(statusCode).json({
       statusCode: statusCode,
       errorName: err.name,
       status: 'fail',
