@@ -12,9 +12,6 @@ router.post('/login', loginController);
 router.post('/verify-otp', verifyOTPController);
 
 // members
-router.post("/member/login", memberLoginController);
-
-// add a member
-// router.post("/admin/members", createMemberAccount);
+router.post('/member/login', memberLoginController);
 
 export default router;
