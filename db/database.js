@@ -23,7 +23,7 @@ const main = async function () {
 
   try {
     await client.connect();
-    const db = client.db(databaseName).command({ ping: 1 });
+    const db = client.db(databaseName);
     console.log('🚀 successfully connected with the database');
     return db;
   } catch (err) {
