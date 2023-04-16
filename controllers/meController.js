@@ -3,6 +3,7 @@ import User, { USER_TYPE } from '../models/User.js';
 import asyncHandler from '../utils/asyncHandler.js';
 import statusCode from '../utils/statusCode.js';
 import filterObject from '../utils/filterObject.js';
+import { verifyMobileNumberUsingOTP } from './verificationController.js';
 
 export const getMeController = asyncHandler(async (req, res, next) => {
   const id = req.id;
@@ -51,7 +52,7 @@ export const updateMobileNumber = asyncHandler(async (req, res, next) => {
   if (!newMobileNumber) {
     return next(
       new GlobalError(
-        'Please provide a new mobile number to updater',
+        'Please provide a new mobile number to update',
         statusCode.BAD_REQUEST
       )
     );

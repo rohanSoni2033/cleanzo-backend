@@ -48,7 +48,7 @@ export const verifyOTPController = asyncHandler(async function (
     otpExpiresTimestamp
   );
 
-  if (req.id && req.headers.token) {
+  if (req.id && req.headers.authorization) {
     await User.updateOneById(req.id, { mobileNumber });
     return res.status(statusCode.OK).json({
       status: 'success',
