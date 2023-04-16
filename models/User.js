@@ -1,5 +1,11 @@
 import Factory from './Factory.js';
 
+export const USER_TYPE = {
+  ADMIN: "admin",
+  MEMBER: "member",
+  USER: "user"
+}
+
 export class UserDAO extends Factory {
   constructor(id, name, mobileNumber, email, address, location, vehicle, addressType, userType, membershipId, isActive, createdAt) {
     this.id = id;

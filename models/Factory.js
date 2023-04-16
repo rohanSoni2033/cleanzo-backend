@@ -1,49 +1,69 @@
-import db from "../db/database.js";
+import db from '../db/database.js';
 // direct interaction with the database
+
+import { ObjectId } from 'mongodb';
+
 class Factory {
-    constructor(collection) {
-        this.collection = collection;
-    }
+  constructor(collection) {
+    this.collection = collection;
+  }
 
-    async createOne(data) {
-        return await db.collection(this.collection).insertOne(data);
-    }
+  async createOne(data) {
+    const { insertedId } = await db.collection(this.collection).insertOne(data);
+    return insertedId.toString();
+  }
 
-    async getAll() {
-        return await db.collection(this.collection).find();
-    }
+  async getAll(query, sortQuery) {
+    const results = db
+      .collection(this.collection)
+      .find(query)
+      .sort(sortQuery ? sortQuery : {});
 
-    async getOne(filter) {
-        return await db.collection(this.collection).findOne(filter);
-    }
+    return results.toArray();
+  }
 
-    async getOneById(id) {
-        return await db.collection(this.collection).findOne({ _id: new ObjectId(id) })
-    }
+  async getOne(filter) {
+    const result = await db.collection(this.collection).findOne(filter);
+    return result;
+  }
 
-    async updateOneById(id, data) {
-        return await db.collection(this.collection).updateOne({ _id: new ObjectId(id) }, { $set: data });
-    }
+  async getOneById(id) {
+    return await db
+      .collection(this.collection)
+      .findOne({ _id: new ObjectId(id) });
+  }
 
-    async updateOne(filter, data) {
-        return await db.collection(this.collection).updateOne(filter, { $set: data });
-    }
+  async updateOneById(id, data) {
+    return await db
+      .collection(this.collection)
+      .updateOne({ _id: new ObjectId(id) }, { $set: data });
+  }
 
-    async updateMany(filter, data) {
-        return await db.collection(this.collection).updateMany(filter, { $set: data });
-    }
+  async updateOne(filter, data) {
+    return await db
+      .collection(this.collection)
+      .updateOne(filter, { $set: data });
+  }
 
-    async deleteOne(filter) {
-        return await db.collection(this.collection).findOneAndDelete(filter);
-    }
+  async updateMany(filter, data) {
+    return await db
+      .collection(this.collection)
+      .updateMany(filter, { $set: data });
+  }
 
-    async deleteOneById(id) {
-        return await db.collection(this.collection).findOneAndDelete({ _id: new ObjectId(id) })
-    }
+  async deleteOne(filter) {
+    return await db.collection(this.collection).findOneAndDelete(filter);
+  }
 
-    async deleteMany(filter) {
-        return await db.collection(this.collection).deleteMany(filter);
-    }
+  async deleteOneById(id) {
+    return await db
+      .collection(this.collection)
+      .findOneAndDelete({ _id: new ObjectId(id) });
+  }
+
+  async deleteMany(filter) {
+    return await db.collection(this.collection).deleteMany(filter);
+  }
 }
 
 export default Factory;

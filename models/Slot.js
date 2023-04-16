@@ -1,13 +1,13 @@
-import Factory from "./Factory.js";
+import Factory from './Factory.js';
 
 export class SlotDAO {
-  constructor(id, time, date, totalBookingsInThisSlot, isAvailable) {
+  constructor(id, slotDate, slotTime, totalBookings, isAvailable) {
     this.id = id;
-    this.time = time;
-    this.date = date;
-    this.totalBookingsInThisSlot = totalBookingsInThisSlot;
+    this.slotDate = slotDate;
+    this.slotTime = slotTime;
+    this.totalBookings = totalBookings;
     this.isAvailable = isAvailable;
   }
 }
 
-export default new Factory("slots");
+export default new Factory('slots');
