@@ -145,21 +145,21 @@ const validDataForOTPVerification = async (
 };
 
 export const protectRoute = asyncHandler(async function (req, res, next) {
-  const { token } = req.headers;
+  const { authorization } = req.headers;
 
-  if (!token) {
+  if (!authorization) {
     return next(
       new GlobalError(errmsg.TOKEN_NOT_DEFINED, statusCode.UNAUTHORIZED)
     );
   }
 
-  if (!token.startsWith('Token')) {
+  if (!authorization.startsWith('Bearer')) {
     return next(
       new GlobalError(errmsg.TOKEN_NOT_DEFINED, statusCode.UNAUTHORIZED)
     );
   }
 
-  const tokenString = token.split(' ')[1];
+  const tokenString = authorization.split(' ')[1];
   const decodedTokenString = jwt.verify(tokenString, process.env.jwtSecret);
 
   if (!decodedTokenString) {

@@ -1,66 +1,152 @@
 import GlobalError from '../error/GlobalError.js';
-import User from '../models/User.js';
+import User, { USER_TYPE } from '../models/User.js';
 import asyncHandler from '../utils/asyncHandler.js';
 import statusCode from '../utils/statusCode.js';
+import filterObject from '../utils/filterObject.js';
 
-const filterObject = (obj, allowedFields) => {
-  const filteredObj = {};
-  allowedFields.forEach(field => {
-    if (obj[field]) {
-      filteredObj[field] = obj[field];
-    }
+class Location {
+  constructor(lat, long) {
+    this.lat = lat;
+    this.long = long;
+  }
+}
+
+export const createUser = asyncHandler(async (req, res, next) => {
+  const userFields = req.body;
+
+  const filteredUserFields = filterObject(userFields, [
+    'mobileNumber',
+    'name',
+    'password',
+    'userType',
+  ]);
+
+  const { mobileNumber, userType } = filteredUserFields;
+
+  if (!mobileNumber) {
+    return next(
+      new GlobalError('Please provide mobile number', statusCode.BAD_REQUEST)
+    );
+  }
+
+  if (!userType) {
+    return next(
+      new GlobalError('Please define the user type', statusCode.BAD_REQUEST)
+    );
+  }
+
+  if (userType === USER_TYPE.USER) {
+    return await User.createOne(mobileNumber);
+  }
+
+  if (
+    userType === USER_TYPE.MEMBER &&
+    (!filteredUserFields.password || !filteredUserFields.name)
+  ) {
+    return next(
+      new GlobalError(
+        'password and name is required to create a member account',
+        statusCode.BAD_REQUEST
+      )
+    );
+  }
+
+  if (userType === USER_TYPE.MEMBER) {
+    return await User.createOne(
+      mobileNumber,
+      USER_TYPE.MEMBER,
+      filteredUserFields.password,
+      filteredUserFields.name
+    );
+  }
+
+  res.status(statusCode.CREATED).json({
+    status: 'success',
   });
-  return filteredObj;
-};
+});
 
-export const createMemberAccount = asyncHandler(async (req, res, next) => {
+export const getAllUsers = asyncHandler(async (req, res, next) => {
+  const requestObject = { ...req.query };
+
+  const queryFields = ['sort', 'limit', 'page', 'filter'];
+
+  queryFields.forEach(field =>
+    requestObject[field] ? delete requestObject[field] : null
+  );
+
+  const sortQuery = req.query.sort;
+
+  // sorting, filtering, limiting, pagination, aliases,
+  const results = await User.getAll(requestObject);
+
+  res.status(statusCode.OK).json({
+    status: 'success',
+    data: {
+      users: results,
+    },
+  });
+});
+
+export const getUser = asyncHandler(async (req, res, next) => {
+  const { id } = req.params;
+  const result = await User.getOneById(id);
+  res.status(statusCode.OK).json({
+    status: 'success',
+    user: result,
+  });
+});
+
+export const updateUser = asyncHandler(async (req, res, next) => {
+  const { id } = req.params;
+  const result = await User.updateOneById(id);
+  res.status(statusCode.NO_CONTENT).json({
+    status: 'success',
+  });
+});
+
+export const deleteUser = asyncHandler(async (req, res, next) => {});
+
+export const createMember = asyncHandler(async (req, res, next) => {
   const memberFields = req.body;
 
-  const filteredMemberFields = filterObject(memberFields, ["fullname", "mobileNumber", "password", "userType", "address", "location"]);
+  const filteredMemberFields = filterObject(memberFields, [
+    'fullname',
+    'mobileNumber',
+    'password',
+    'userType',
+    'address',
+    'location',
+  ]);
 
   const { mobileNumber, password } = filteredMemberFields;
 
   if (!mobileNumber) {
-    return next(new GlobalError("Mobile number is required to create a member account", statusCode.BAD_REQUEST));
+    return next(
+      new GlobalError(
+        'Mobile number is required to create a member account',
+        statusCode.BAD_REQUEST
+      )
+    );
   }
   if (!password) {
-    return next(new GlobalError("Please provide a password to create a member account", statusCode.BAD_REQUEST));
+    return next(
+      new GlobalError(
+        'Please provide a password to create a member account',
+        statusCode.BAD_REQUEST
+      )
+    );
   }
 
-  const memberAlreadyExits = await User.findByMobileNumber(mobileNumber);
+  const memberAlreadyExits = await User.getOne({ mobileNumber });
 
   if (memberAlreadyExits) {
-    next(new GlobalError("Please use another mobile number", statusCode.BAD_REQUEST));
+    next(
+      new GlobalError(
+        'Please use another mobile number',
+        statusCode.BAD_REQUEST
+      )
+    );
   }
 
   const newMember = await User.createOne(filteredMemberFields);
 });
-
-export const updateMeController = asyncHandler(async (req, res, next) => {
-  // Get the all the fields that came with the request and filter it
-  const fieldsObjForUpdate = req.body;
-
-  // User allowed only to change their name, address and vehicle directly (with verification)
-  // so, we will remove all the other field and empty field from the object
-
-  const fieldsToUpdate = filterObject(fieldsObjForUpdate, [
-    'name',
-    'vehicle',
-    'address',
-    'email',
-  ]);
-
-  // We need the id of current logged in user
-  // we can get the id from the req.body because it is a protected route so req.body must have an id field by now
-
-  const currentUserId = req['id'];
-
-  // now we have the id and filtered object for update so, we can call the updateById method from user model class
-  const result = await User.updateById(currentUserId, fieldsToUpdate);
-
-  res.status(200).json({
-    status: 'ok',
-  });
-});
-
-const updateCurrentUserMobile = asyncHandler(async (req, res, next) => { });
