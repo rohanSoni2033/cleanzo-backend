@@ -1,24 +1,25 @@
-import Factory from "./Factory.js";
-
-export class ServiceDetailsDAO {
-  constructor(image, title) {
-    this.image = image;
-    this.title = title;
-  }
-}
+import Factory from './Factory.js';
 
 export class ServiceDAO {
-  constructor(id, images, category, durationOfService, name, price,
-    serviceDetails, description) {
+  constructor(
+    id,
+    serviceGroupId,
+    images,
+    durationOfService,
+    serviceName,
+    price,
+    serviceDetails,
+    description
+  ) {
     this.id = id;
+    this.serviceGroupId = serviceGroupId;
     this.images = images;
-    this.category = category;
     this.durationOfService = durationOfService;
-    this.name = name;
+    this.serviceName = serviceName;
     this.price = price;
     this.serviceDetails = serviceDetails;
     this.description = description;
   }
 }
 
-export default new Factory("services");
+export default new Factory('services');

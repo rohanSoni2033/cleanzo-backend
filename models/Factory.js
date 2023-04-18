@@ -13,11 +13,11 @@ class Factory {
     return insertedId.toString();
   }
 
-  async getAll(query, sortQuery) {
+  async getAll(query) {
     const results = db
       .collection(this.collection)
-      .find(query)
-      .sort(sortQuery ? sortQuery : {});
+      .find(query ? query.filter : {})
+      .sort(query ? query.sortQuery : {});
 
     return results.toArray();
   }
