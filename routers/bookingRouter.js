@@ -14,19 +14,15 @@ import {
   protectRoute,
 } from '../controllers/authController.js';
 
-router.get(
-  '/',
-  protectRoute,
-  accessPermission('admin', 'member'),
-  getAllBookings
-);
+router
+  .get('/', protectRoute, accessPermission('admin'), getAllBookings)
+  .post('/', protectRoute, accessPermission('admin', 'user'), createBooking);
 
 router
   .route('/:id')
-  .get(protectRoute, accessPermission('admin', 'member'), getBooking)
-  .post(protectRoute, accessPermission('admin', 'user'), createBooking)
-  .patch(protectRoute, accessPermission('admin', 'member'), updateBooking)
-  .delete(protectRoute, accessPermission('admin', 'member'), deleteBooking);
+  .get(protectRoute, accessPermission('admin'), getBooking)
+  .patch(protectRoute, accessPermission('admin'), updateBooking)
+  .delete(protectRoute, accessPermission('admin'), deleteBooking);
 
 // api/v1.0/users/userId/bookings
 // api/v1.0/services/serviceId/bookings

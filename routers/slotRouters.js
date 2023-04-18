@@ -15,12 +15,15 @@ import {
 
 const router = Router();
 
-router.get('/', protectRoute, getAllSlots);
-router.post('/', protectRoute, accessPermission('admin'), createSlot);
+router
+  .route('/')
+  .get(protectRoute, getAllSlots)
+  .post(protectRoute, accessPermission('admin'), createSlot);
+
 router
   .route('/:id')
   .get(protectRoute, getSlot)
-  .delete(protectRoute, accessPermission('admin'), deleteSlot)
-  .patch(protectRoute, accessPermission('admin'), updateSlot);
+  .patch(protectRoute, accessPermission('admin'), updateSlot)
+  .delete(protectRoute, accessPermission('admin'), deleteSlot);
 
 export default router;

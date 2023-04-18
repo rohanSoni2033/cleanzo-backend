@@ -8,11 +8,13 @@ import {
   updateVehicle,
   getAllVehicles,
   getVehicle,
-} from '../controllers/VehicleController.js';
+  createVehicle,
+} from '../controllers/vehicleController.js';
 
 const router = Router();
 
 router.get('/', protectRoute, getAllVehicles);
+router.post('/', accessPermission('admin'), createVehicle);
 router
   .route('/:id')
   .get(protectRoute, getVehicle)
