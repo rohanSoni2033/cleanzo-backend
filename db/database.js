@@ -4,11 +4,11 @@ dotenv.config();
 import { MongoClient, ServerApiVersion } from 'mongodb';
 
 // connection uri for connecting with the mongodb database
-// const connectionUri = process.env.connectionUriHosted
-//   .replace('${PASSWORD}', process.env.databasePassword)
-//   .replace('${USERNAME}', process.env.databaseUsername);
+const connectionUri = process.env.connectionUriHosted
+  .replace('${PASSWORD}', process.env.databasePassword)
+  .replace('${USERNAME}', process.env.databaseUsername);
 
-const connectionUri = 'mongodb://127.0.0.1:27017';
+// const connectionUri = 'mongodb://127.0.0.1:27017';
 
 const databaseName = process.env.database;
 
