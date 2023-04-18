@@ -66,18 +66,16 @@ export const createUser = asyncHandler(async (req, res, next) => {
 });
 
 export const getAllUsers = asyncHandler(async (req, res, next) => {
-  const requestObject = { ...req.query };
+  // const requestObject = { ...req.query };
 
-  const queryFields = ['sort', 'limit', 'page', 'filter'];
+  // const queryFields = ['sort', 'limit', 'page', 'filter'];
 
-  queryFields.forEach(field =>
-    requestObject[field] ? delete requestObject[field] : null
-  );
-
-  const sortQuery = req.query.sort;
+  // queryFields.forEach(field =>
+  //   requestObject[field] ? delete requestObject[field] : null
+  // );
 
   // sorting, filtering, limiting, pagination, aliases,
-  const results = await User.getAll(requestObject);
+  const results = await User.getAll();
 
   res.status(statusCode.OK).json({
     status: 'success',

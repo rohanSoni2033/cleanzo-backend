@@ -3,6 +3,7 @@ import User, { USER_TYPE } from '../models/User.js';
 import asyncHandler from '../utils/asyncHandler.js';
 import statusCode from '../utils/statusCode.js';
 import filterObject from '../utils/filterObject.js';
+import Booking from '../models/Booking.js';
 import { verifyMobileNumberUsingOTP } from './verificationController.js';
 
 export const getMeController = asyncHandler(async (req, res, next) => {
@@ -91,6 +92,19 @@ export const updateMobileNumber = asyncHandler(async (req, res, next) => {
       mobileNumber: newMobileNumber,
       otpExpiresTimestamp,
       hashedString,
+    },
+  });
+});
+
+export const getMyBookings = asyncHandler(async (req, res, next) => {
+  const { id } = req;
+  const results = await Booking.getAll({ userId: id });
+
+  res.status(statusCode.OK).json({
+    status: 'success',
+    data: {
+      length: results.length,
+      data: results,
     },
   });
 });

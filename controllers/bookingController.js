@@ -33,32 +33,44 @@ export const getBooking = asyncHandler(async (req, res, next) => {
 });
 
 export const createBooking = asyncHandler(async (req, res, next) => {
-  const { userId, serviceId, vehicleModel, paymentStatus, slotId } = req.body;
+  const {
+    name,
+    mobileNumber,
+    address,
+    serviceId,
+    vehicleModel,
+    paymentStatus,
+    slotId,
+  } = req.body;
 
   // userId, serviceId, slotId must belong to users, services and slots collection respectively
   const slot = await Slot.getOneById(slotId);
 
-  if (!slot.isAvailable) {
-    next(
+  if (!slot) {
+    return next(
+      new GlobalError('Please provide a valid slot id', statusCode.BAD_REQUEST)
+    );
+  }
+
+  if (!slot.available) {
+    return next(
       new GlobalError(
         'Sorry, Unfortunately this slot is not available, please choose another',
         statusCode.BAD_REQUEST
       )
     );
   }
-  // increment the value of total bookings in this slot
-  // check if the total bookings is equal to total number employee
+  // user's details -> name, mobile number, address, location
+  // service details -> service name, price
+  // vehicle's details -> vehicle brand, model name
 
-  await Slot.updateOneById(slotId, { isAvailable: false });
-
-  // name, mobile number, address, location,
-  const id = await Booking.createOne({
+  await Booking.createOne({
+    userId: req.id,
     name,
     mobileNumber,
     address,
-    location,
-    serviceId,
     vehicleModel,
+    serviceId,
     paymentStatus,
     slotDate: slot.slotDate,
     slotTime: slot.slotTime,
@@ -66,6 +78,12 @@ export const createBooking = asyncHandler(async (req, res, next) => {
     createdAt: Date.now(),
   });
 
+  // increment the value of total bookings in this slot
+  // check if the total bookings is equal to total number slots
+
+  await Slot.updateOneById(slotId, { available: false });
+
+  // send sms and notification to the user
   res.status(statusCode.CREATED).json({
     status: 'success',
   });
@@ -85,17 +103,4 @@ export const updateBooking = asyncHandler(async (req, res, next) => {
   const { bookingStatus, paymentStatus } = req.body;
 
   await Booking.updateOneById(id, { bookingStatus, paymentStatus });
-});
-
-export const getUserBookings = asyncHandler(async (req, res, next) => {
-  const { id } = req;
-  const results = await Booking.getAll({ userId: id });
-
-  res.status(statusCode.OK).json({
-    status: 'success',
-    data: {
-      length: results.length,
-      data: results,
-    },
-  });
 });
