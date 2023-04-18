@@ -45,6 +45,14 @@ app.use('/api/v1.0/vehicles', vehicleRouters);
 app.use('/api/v1.0/service-groups', serviceGroupRouters);
 app.use('/api/v1.0/memberships', membershipRouters);
 
+// testing endpoint
+app.get('/api/v1.0/test', (req, res, next) => {
+  res.status(200).json({
+    status: 'success',
+    message: 'Hello, API is working',
+  });
+});
+
 app.use('*', (req, res, next) => {
   return next(
     new GlobalError(`${req.baseUrl} not found`, statusCode.BAD_REQUEST)
