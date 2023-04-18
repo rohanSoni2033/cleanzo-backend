@@ -8,12 +8,15 @@ import GlobalError from './error/GlobalError.js';
 import statusCode from './utils/statusCode.js';
 
 import authRouters from './routers/authRouters.js';
-import servicesRouters from './routers/serviceRouters.js';
+import serviceRouters from './routers/serviceRouters.js';
 import userRouters from './routers/userRouter.js';
 import meRouter from './routers/meRouters.js';
 import slotRouters from './routers/slotRouters.js';
 import bookingRouters from './routers/bookingRouter.js';
 import vehicleRouters from './routers/vehicleRouter.js';
+import serviceGroupRouters from './routers/serviceGroupRouters.js';
+import membershipRouters from './routers/membershipRouters.js';
+import membershipPlanRouters from './routers/membershipPlanRouters.js';
 
 const app = express();
 
@@ -28,17 +31,19 @@ const limit = rateLimit({
   message: 'Too many request from this ip, try again after sometime',
 });
 
-app.use('/api', limit);
+app.use('/api/v1.0', limit);
 app.use(express.json({ limit: '10kb' }));
 
 app.use('/api/v1.0/auth', authRouters);
-app.use('/api/v1.0/services', servicesRouters);
-app.use('/api/v1.0/users', userRouters);
 app.use('/api/v1.0/me', meRouter);
+app.use('/api/v1.0/services', serviceRouters);
 app.use('/api/v1.0/slots', slotRouters);
 app.use('/api/v1.0/bookings', bookingRouters);
-// app.use('/api/v1.0/membership', membershipRouters);
+app.use('/api/v1.0/users', userRouters);
+app.use('/api/v1.0/membership-plans', membershipPlanRouters);
 app.use('/api/v1.0/vehicles', vehicleRouters);
+app.use('/api/v1.0/service-groups', serviceGroupRouters);
+app.use('/api/v1.0/memberships', membershipRouters);
 
 app.use('*', (req, res, next) => {
   return next(
@@ -47,7 +52,7 @@ app.use('*', (req, res, next) => {
 });
 
 app.use((err, req, res, next) => {
-  res.status(400).json({
+  res.status(err.statusCode).json({
     status: 'error',
     message: err.message,
   });

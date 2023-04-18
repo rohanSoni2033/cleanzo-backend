@@ -5,3 +5,4 @@ tests
 package-lock.json
 .vscode
 bin
+.eslintrc.json
