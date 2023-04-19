@@ -55,13 +55,17 @@ app.get('/api/v1.0/test', (req, res, next) => {
 
 app.use('*', (req, res, next) => {
   return next(
-    new GlobalError(`${req.baseUrl} not found`, statusCode.BAD_REQUEST)
+    new GlobalError(`url ${req.baseUrl} not found`, statusCode.NOT_FOUND)
   );
 });
 
 app.use((err, req, res, next) => {
   res.status(err.statusCode).json({
     status: 'error',
+    body: res.body,
+    httpMethod: req.method,
+    url: req.url,
+    httpStatusCode: err.statusCode,
     message: err.message,
   });
 });
