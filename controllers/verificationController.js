@@ -37,6 +37,7 @@ export const verifyOTP = async (
   hashedString
 ) => {
   otpExpiresTimestamp = Number(otpExpiresTimestamp);
+  otp = Number(otp);
   // first it will if the otp has expired or it is still valid
   const otpIsCorrect = await compare(
     { mobileNumber, otp, otpExpiresTimestamp },
