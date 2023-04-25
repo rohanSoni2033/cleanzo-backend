@@ -1,56 +1,55 @@
 import asyncHandler from '../utils/asyncHandler.js';
 import Vehicle from '../models/Vehicle.js';
 import GlobalError from '../error/GlobalError.js';
-import { deleteOne, getAll, getOne, updateOne } from './factoryController.js';
+import { deleteOne, getOne, updateOne } from './factoryController.js';
 import statusCode from '../utils/statusCode.js';
 
 export const createVehicle = asyncHandler(async (req, res, next) => {
-  const { name, logo, models } = req.body;
+  const { brand, logo, model } = req.body;
 
-  if (!name || !logo || !models) {
+  if (!brand || !logo || !model) {
     return next(
       new GlobalError('Please define all the required fields', statusCode.OK)
     );
   }
 
-  await Vehicle.createOne({
-    name,
-    logo,
-    models,
-  });
+  await Vehicle.createOne({ brand, logo, model });
+
+  res.status(statusCode.CREATED).json({ status: 'success' });
+});
+
+export const getAllVehicles = asyncHandler(async (req, res, next) => {
+  const vehicles = await Vehicle.getAll();
+
+  const groupedVehicles = vehicles.reduce((acc, vehicle) => {
+    const { _id, brand, logo, model } = vehicle;
+
+    const existingBrandIndex = acc.findIndex(group => group.brand === brand);
+
+    if (existingBrandIndex >= 0) {
+      acc[existingBrandIndex].models.push({ _id, model });
+    } else {
+      acc.push({
+        brand: brand,
+        logo: logo,
+        models: [{ _id, model }],
+      });
+    }
+
+    return acc;
+  }, []);
 
   res.status(statusCode.OK).json({
     status: 'success',
+    data: {
+      length: groupedVehicles.length,
+      vehicles: groupedVehicles,
+    },
   });
 });
-
-export const getAllVehicles = getAll(Vehicle);
 
 export const getVehicle = getOne(Vehicle);
 
 export const updateVehicle = updateOne(Vehicle);
 
 export const deleteVehicle = deleteOne(Vehicle);
-
-// api/v1.0/vehicles/643cf529a4af2bfc157aadce/models
-export const getModelOfVehicle = asyncHandler(async (req, res, next) => {
-  const { id } = req.params;
-  const { modelName } = req.body;
-
-  if (!modelName) {
-    next(
-      new GlobalError('Please provide the model name', statusCode.BAD_REQUEST)
-    );
-  }
-
-  const vehicle = await Vehicle.getOneById(id);
-
-  const model = vehicle.models.find(value => value === modelName);
-
-  res.status(statusCode.OK).json({
-    status: 'success',
-    data: {
-      model,
-    },
-  });
-});
