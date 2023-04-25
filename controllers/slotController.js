@@ -46,7 +46,7 @@ export const createSlot = asyncHandler(async (req, res, next) => {
     slotDate: date.toLocaleDateString(),
     slotTime: date.toLocaleTimeString(),
     available: true,
-    totalBookings: 0,
+    bookings: [],
   });
 
   res.status(statusCode.CREATED).json({
@@ -63,11 +63,29 @@ export const getAllSlots = asyncHandler(async (req, res, next) => {
     sortQuery: { slotDate: 1, slotTime: 1 },
   });
 
+  slots.forEach(slot => delete slot.bookings);
+
   res.status(statusCode.OK).json({
     status: 'success',
     data: {
       total: slots.length,
       slots,
+    },
+  });
+});
+
+export const getSlotBookings = asyncHandler(async (req, res, next) => {
+  const { id } = req.params;
+
+  const slot = await Slot.getOneById(id);
+  const { bookings } = slot;
+
+  // fetch all the bookings from the database
+  res.status(statusCode.OK).json({
+    status: 'success',
+    data: {
+      length: bookings.length,
+      bookings,
     },
   });
 });
