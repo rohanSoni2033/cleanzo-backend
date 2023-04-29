@@ -3,7 +3,8 @@ import asyncHandler from '../utils/asyncHandler.js';
 import GlobalError from '../error/GlobalError.js';
 import { deleteOne, getOne, updateOne } from './factoryController.js';
 import statusCode from '../utils/statusCode.js';
-import { Vehicle } from '../db/collections.js';
+import { Vehicle, User } from '../db/collections.js';
+import { ObjectId } from 'mongodb';
 
 export const createVehicle = asyncHandler(async (req, res, next) => {
   const { brand, logo, model } = req.body;

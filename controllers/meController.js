@@ -43,7 +43,7 @@ export const updateMeController = asyncHandler(async (req, res, next) => {
 
   const result = await User.updateOne(
     { _id: new ObjectId(userId) },
-    fieldsToUpdate
+    { $set: fieldsToUpdate }
   );
 
   res.status(statusCode.OK).json({
