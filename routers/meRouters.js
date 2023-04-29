@@ -25,13 +25,13 @@ import {
   getMyVehicles,
 } from './../controllers/vehicleController.js';
 
-import {
-  getMyAllMemberships,
-  getMyMembership,
-  deleteMyMembership,
-  updateMyMembership,
-} from './../controllers/membershipController.js';
-import { createMembershipBooking } from '../controllers/membershipBookingController.js';
+// import {
+//   getMyAllMemberships,
+//   getMyMembership,
+//   deleteMyMembership,
+//   updateMyMembership,
+// } from './../controllers/membershipController.js';
+// import { createMembershipBooking } from '../controllers/membershipBookingController.js';
 
 const router = Router();
 
