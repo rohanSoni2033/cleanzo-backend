@@ -5,6 +5,7 @@ import filterObject from '../utils/filterObject.js';
 
 import { User } from '../db/collections.js';
 import { USER_TYPE } from '../utils/constants.js';
+import { ObjectId } from 'mongodb';
 
 export const createUser = asyncHandler(async (req, res, next) => {
   const userFields = req.body;
@@ -64,7 +65,7 @@ export const createUser = asyncHandler(async (req, res, next) => {
 });
 
 export const getAllUsers = asyncHandler(async (req, res, next) => {
-  const users = await User.getAll();
+  const users = await User.find().toArray();
 
   res.status(statusCode.OK).json({
     status: 'success',
@@ -77,7 +78,7 @@ export const getAllUsers = asyncHandler(async (req, res, next) => {
 
 export const getUser = asyncHandler(async (req, res, next) => {
   const { id } = req.params;
-  const user = await User.getOneById(id);
+  const user = await User.findOne({ _id: new ObjectId(id) });
   res.status(statusCode.OK).json({
     status: 'success',
     data: {
@@ -88,13 +89,21 @@ export const getUser = asyncHandler(async (req, res, next) => {
 
 export const updateUser = asyncHandler(async (req, res, next) => {
   const { id } = req.params;
-  await User.updateOneById(id);
+  const data = req.body;
+  await User.updateOne({ _id: new ObjectId(id) }, { data });
   res.status(statusCode.OK).json({
     status: 'success',
   });
 });
 
-export const deleteUser = asyncHandler(async (req, res, next) => {});
+export const deleteUser = asyncHandler(async (req, res, next) => {
+  const { id } = req.params;
+  await User.updateOne({ _id: new ObjectId(id) }, { active: false });
+
+  res.status(statusCode.OK).json({
+    status: 'success',
+  });
+});
 
 export const createMember = asyncHandler(async (req, res, next) => {
   const memberFields = req.body;
@@ -121,7 +130,7 @@ export const createMember = asyncHandler(async (req, res, next) => {
     );
   }
 
-  const memberAlreadyExits = await User.getOne({ mobileNumber });
+  const memberAlreadyExits = await User.findOne({ mobileNumber });
 
   if (memberAlreadyExits) {
     next(
