@@ -25,6 +25,7 @@ export const updateMeController = asyncHandler(async (req, res, next) => {
     'name',
     'address',
     'email',
+    'location',
   ]);
 
   if (fieldsObjForUpdate.vehicle) {
