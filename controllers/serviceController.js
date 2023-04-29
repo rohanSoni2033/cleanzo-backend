@@ -1,39 +1,36 @@
+import { ObjectId } from 'mongodb';
 import GlobalError from '../error/GlobalError.js';
 import asyncHandler from '../utils/asyncHandler.js';
 import statusCode from '../utils/statusCode.js';
-import Service from '../models/Service.js';
-import Vehicle from '../models/Vehicle.js';
+import { Service, Vehicle } from '../db/collections.js';
 
 import { getOne, updateOne, deleteOne } from './factoryController.js';
 
-// filtering, sorting
-const validateFields = (fields, requiredFields) => {
-  requiredFields.forEach(field => {
-    if (!fields[field]) {
-      throw new GlobalError(
-        'Please provide all the required fields',
-        statusCode.BAD_REQUEST
-      );
-    }
-  });
-};
-
 export const createService = asyncHandler(async (req, res, next) => {
-  const serviceToCreate = req.body;
-
-  const result = await Service.create(
-    image,
+  const {
+    serviceCategoryId,
+    serviceCategoryName,
     serviceName,
-    category,
-    price,
     durationOfService,
+    serviceBasePrice,
     description,
-    serviceDetails
-  );
+    image,
+    details,
+  } = req.body;
+
+  await Service.insertOne({
+    serviceCategoryId,
+    serviceCategoryName,
+    serviceName,
+    durationOfService,
+    serviceBasePrice,
+    description,
+    image,
+    details,
+  });
 
   res.status(statusCode.OK).json({
     status: 'success',
-    data: result,
   });
 });
 
@@ -44,47 +41,48 @@ export const updateService = updateOne(Service);
 export const deleteService = deleteOne(Service);
 
 export const getAllServices = asyncHandler(async (req, res, next) => {
-  const { vehicleId, modelName } = req.body;
+  const { vehicleId } = req.body;
 
-  if (!vehicleId || !modelName) {
+  if (!vehicleId) {
     return next(
-      new GlobalError(
-        'Please provide the vehicle id and vehicle model',
-        statusCode.BAD_REQUEST
-      )
+      new GlobalError('Please provide the vehicle id', statusCode.BAD_REQUEST)
     );
   }
 
-  const vehicles = await Vehicle.getOneById(vehicleId);
+  const vehicle = await Vehicle.findOne({ _id: new ObjectId(vehicleId) });
 
-  if (!vehicles) {
+  if (!vehicle) {
     return next(
       new GlobalError('Vehicle not found with this id', statusCode.NOT_FOUND)
     );
   }
 
-  const vehicleModel = vehicles.models.find(
-    vehicle => vehicle.modelName.toLowerCase() === modelName.toLowerCase()
-  );
+  const servicesList = await Service.find().toArray();
 
-  if (!vehicleModel) {
-    return next(
-      new GlobalError('vehicle model not found', statusCode.NOT_FOUND)
-    );
-  }
-
-  const services = await Service.getAll();
-
-  services.forEach(service => {
-    service.price += vehicleModel.price;
-    // update the price and duration of the service according to the vehicle model
+  servicesList.forEach(service => {
+    service.totalPrice =
+      service.serviceBasePrice + vehicle.additionalServicePrice;
+    delete service.serviceBasePrice;
   });
+
+  const groupedServiceList = servicesList.reduce((acc, obj) => {
+    const key = obj.serviceCategoryName;
+
+    delete obj.serviceCategoryId;
+    delete obj.serviceCategoryName;
+
+    if (!acc[key]) {
+      acc[key] = [];
+    }
+    acc[key].push(obj);
+    return acc;
+  }, {});
 
   res.status(statusCode.OK).json({
     status: 'success',
     data: {
-      length: services.length,
-      data: services,
+      length: groupedServiceList.length,
+      services: groupedServiceList,
     },
   });
 });

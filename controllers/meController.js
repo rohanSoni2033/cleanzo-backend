@@ -1,20 +1,20 @@
 import GlobalError from '../error/GlobalError.js';
-import User, { USER_TYPE } from '../models/User.js';
 import asyncHandler from '../utils/asyncHandler.js';
 import statusCode from '../utils/statusCode.js';
 import filterObject from '../utils/filterObject.js';
-import Booking from '../models/Booking.js';
 import { verifyMobileNumberUsingOTP } from './verificationController.js';
+import { ObjectId } from 'mongodb';
+
+import { User } from '../db/collections.js';
 
 export const getMeController = asyncHandler(async (req, res, next) => {
-  const id = req.id;
-  const user = await User.getOneById(id);
+  const userId = req.userId;
+
+  const user = await User.findOne({ _id: new ObjectId(userId) });
 
   res.status(statusCode.OK).json({
-    status: 'ok',
-    data: {
-      me: user,
-    },
+    status: 'success',
+    data: user,
   });
 });
 
@@ -23,24 +23,40 @@ export const updateMeController = asyncHandler(async (req, res, next) => {
 
   const fieldsToUpdate = filterObject(fieldsObjForUpdate, [
     'name',
-    'vehicle',
     'address',
     'email',
   ]);
 
-  const currentUserId = req['id'];
+  if (fieldsObjForUpdate.vehicle) {
+    if (!Array.isArray(fieldsObjForUpdate.vehicle)) {
+      return next(
+        new GlobalError(
+          'Vehicle must be type of an array',
+          statusCode.BAD_REQUEST
+        )
+      );
+    }
+  }
 
-  const result = await User.updateOneById(currentUserId, fieldsToUpdate);
+  const userId = req.userId;
+
+  const result = await User.updateOne(
+    { _id: new ObjectId(userId) },
+    fieldsToUpdate
+  );
 
   res.status(statusCode.OK).json({
-    status: 'ok',
+    status: 'success',
   });
 });
 
 export const deleteMeController = asyncHandler(async (req, res, next) => {
-  const id = req.id;
+  const userId = req.userId;
 
-  const result = await User.updateOneById(id, { isActive: false });
+  const result = await User.updateOne(
+    { _id: new ObjectId(userId) },
+    { active: false }
+  );
 
   res.status(statusCode.OK).json({
     status: 'success',
@@ -59,7 +75,7 @@ export const updateMobileNumber = asyncHandler(async (req, res, next) => {
     );
   }
 
-  const currentUser = await User.getOneById(req.id);
+  const currentUser = await User.findOne(req.userId);
 
   if (!currentUser) {
     return next(
@@ -70,7 +86,7 @@ export const updateMobileNumber = asyncHandler(async (req, res, next) => {
     );
   }
 
-  const isMobileNumberExits = await User.getOne({
+  const isMobileNumberExits = await User.findOne({
     mobileNumber: newMobileNumber,
   });
 
@@ -92,19 +108,6 @@ export const updateMobileNumber = asyncHandler(async (req, res, next) => {
       mobileNumber: newMobileNumber,
       otpExpiresTimestamp,
       hashedString,
-    },
-  });
-});
-
-export const getMyBookings = asyncHandler(async (req, res, next) => {
-  const { id } = req;
-  const results = await Booking.getAll({ userId: id });
-
-  res.status(statusCode.OK).json({
-    status: 'success',
-    data: {
-      length: results.length,
-      data: results,
     },
   });
 });

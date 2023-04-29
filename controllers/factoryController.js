@@ -1,9 +1,11 @@
+import { ObjectId } from 'mongodb';
 import asyncHandler from '../utils/asyncHandler.js';
 import statusCode from '../utils/statusCode.js';
 
-export const getAll = Modal => {
+export const getAll = collection => {
   return asyncHandler(async (req, res, next) => {
-    const results = await Modal.getAll();
+    console.log(collection);
+    const results = await collection.find().toArray();
     res.status(statusCode.OK).json({
       status: 'success',
       data: {
@@ -14,10 +16,10 @@ export const getAll = Modal => {
   });
 };
 
-export const getOne = Modal => {
+export const getOne = collection => {
   return asyncHandler(async (req, res, next) => {
     const { id } = req.params;
-    const result = await Modal.getOneById(id);
+    const result = await collection.findOne({ _id: new ObjectId(id) });
     res.status(statusCode.OK).json({
       status: 'success',
       data: result,
@@ -25,21 +27,22 @@ export const getOne = Modal => {
   });
 };
 
-export const deleteOne = Modal => {
+export const deleteOne = collection => {
   return asyncHandler(async (req, res, next) => {
     const { id } = req.params;
-    await Modal.deleteOneById(id);
+    await collection.deleteOne({ _id: new ObjectId(id) });
     res.status(statusCode.OK).json({
       status: 'success',
     });
   });
 };
 
-export const updateOne = Modal => {
+export const updateOne = collection => {
   return asyncHandler(async (req, res, next) => {
     const { id } = req.params;
     const data = req.body;
-    await Modal.updateOneById(id, data);
+
+    await collection.updateOne({ _id: new ObjectId(id) }, { $set: data });
     res.status(statusCode.OK).json({
       status: 'success',
     });

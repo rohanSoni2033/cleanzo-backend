@@ -1,4 +1,3 @@
-import User, { USER_TYPE } from '../models/User.js';
 import statusCode from '../utils/statusCode.js';
 import GlobalError from './../error/GlobalError.js';
 import asyncHandler from './../utils/asyncHandler.js';
@@ -10,7 +9,11 @@ import {
   verifyOTP,
 } from './verificationController.js';
 
-// api/v1.0/login
+import { ObjectId } from 'mongodb';
+
+import { User } from './../db/collections.js';
+import { USER_TYPE } from '../utils/constants.js';
+
 export const loginController = asyncHandler(async function (req, res, next) {
   const { mobileNumber } = req.body;
 
@@ -33,7 +36,6 @@ export const loginController = asyncHandler(async function (req, res, next) {
   });
 });
 
-// api/v.1.0/verify-otp
 export const verifyOTPController = asyncHandler(async function (
   req,
   res,
@@ -48,28 +50,31 @@ export const verifyOTPController = asyncHandler(async function (
     otpExpiresTimestamp
   );
 
-  if (req.id && req.headers.authorization) {
-    await User.updateOneById(req.id, { mobileNumber });
+  if (req.userId && req.headers.authorization) {
+    await User.updateOneById(req.userId, { mobileNumber });
     return res.status(statusCode.OK).json({
       status: 'success',
     });
   }
 
-  const user = await User.getOne({ mobileNumber });
+  const user = await User.findOne({ mobileNumber });
 
-  let id;
+  let userId;
 
   if (user) {
-    id = user._id;
+    userId = user._id;
   } else {
-    id = await User.createOne({
+    const { insertedId } = await User.insertOne({
       mobileNumber,
       userType: USER_TYPE.USER,
       createdAt: Date.now(),
+      vehicles: [],
     });
+
+    userId = insertedId;
   }
 
-  const token = jwt.sign({ id }, process.env.jwtSecret, {
+  const token = jwt.sign({ userId }, process.env.jwtSecret, {
     expiresIn: process.env.jwtExpiresTime,
   });
 
@@ -81,7 +86,6 @@ export const verifyOTPController = asyncHandler(async function (
   });
 });
 
-// api/v1.0/auth/member/login
 export const memberLoginController = asyncHandler(async (req, res, next) => {
   const { mobileNumber, password } = req.body;
   if (!mobileNumber) {
@@ -94,16 +98,16 @@ export const memberLoginController = asyncHandler(async (req, res, next) => {
     return next(new GlobalError(errmsg.NO_PASSWORD, statusCode.BAD_REQUEST));
   }
 
-  const account = await User.getOne({
-    mobileNumber: mobileNumber,
+  const user = await User.findOne({
+    mobileNumber,
     $or: [{ userType: 'team' }, { userType: 'admin' }],
   });
 
-  if (!account) {
+  if (!user) {
     return next(new GlobalError(errmsg.NO_MEMBER_FOUND, statusCode.NOT_FOUND));
   }
 
-  const isPasswordCorrect = password === account.password;
+  const isPasswordCorrect = password === user.password;
 
   if (!isPasswordCorrect) {
     return next(new GlobalError(errmsg.WRONG_PASSWORD, statusCode.BAD_REQUEST));
@@ -147,13 +151,7 @@ const validDataForOTPVerification = async (
 export const protectRoute = asyncHandler(async function (req, res, next) {
   const { authorization } = req.headers;
 
-  if (!authorization) {
-    return next(
-      new GlobalError(errmsg.TOKEN_NOT_DEFINED, statusCode.UNAUTHORIZED)
-    );
-  }
-
-  if (!authorization.startsWith('Bearer')) {
+  if (!authorization || !authorization.startsWith('Bearer')) {
     return next(
       new GlobalError(errmsg.TOKEN_NOT_DEFINED, statusCode.UNAUTHORIZED)
     );
@@ -166,9 +164,9 @@ export const protectRoute = asyncHandler(async function (req, res, next) {
     return next(new GlobalError(errmsg.INVALID_TOKEN, statusCode.UNAUTHORIZED));
   }
 
-  const { id } = decodedTokenString;
+  const { userId } = decodedTokenString;
 
-  const user = await User.getOneById(id);
+  const user = await User.findOne({ _id: new ObjectId(userId) });
 
   if (!user) {
     return next(
@@ -176,15 +174,15 @@ export const protectRoute = asyncHandler(async function (req, res, next) {
     );
   }
 
-  req['id'] = user._id.toString();
-  req['user-type'] = user.userType;
+  req.userId = user._id.toString();
+  req.userType = user.userType;
 
   next();
 });
 
 export const accessPermission = (...userType) => {
   return asyncHandler(async (req, res, next) => {
-    if (userType.includes(req['user-type'])) {
+    if (userType.includes(req.userType)) {
       return next();
     }
     return next(

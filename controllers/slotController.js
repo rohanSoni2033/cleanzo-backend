@@ -1,4 +1,4 @@
-import Slot from './../models/Slot.js';
+// import Slot from './../models/Slot.js';
 import asyncHandler from '../utils/asyncHandler.js';
 import statusCode from '../utils/statusCode.js';
 import GlobalError from '../error/GlobalError.js';
@@ -7,6 +7,9 @@ import {
   updateOne,
   deleteOne,
 } from './../controllers/factoryController.js';
+import { ObjectId } from 'mongodb';
+
+import { Slot } from './../db/collections.js';
 
 export const createSlot = asyncHandler(async (req, res, next) => {
   const { slotDate, slotTime } = req.body;
@@ -41,7 +44,7 @@ export const createSlot = asyncHandler(async (req, res, next) => {
     );
   }
 
-  await Slot.createOne({
+  await Slot.insertOne({
     slotDay: days[date.getDay() - 1],
     slotDate: date.toLocaleDateString(),
     slotTime: date.toLocaleTimeString(),
@@ -58,10 +61,9 @@ export const getAllSlots = asyncHandler(async (req, res, next) => {
   const { available } = req.query;
   const filter = available ? { available: JSON.parse(available) } : {};
 
-  const slots = await Slot.getAll({
-    filter,
-    sortQuery: { slotDate: 1, slotTime: 1 },
-  });
+  const slots = await Slot.find(filter)
+    .sort({ slotDate: 1, slotTime: 1 })
+    .toArray();
 
   slots.forEach(slot => delete slot.bookings);
 
@@ -77,7 +79,7 @@ export const getAllSlots = asyncHandler(async (req, res, next) => {
 export const getSlotBookings = asyncHandler(async (req, res, next) => {
   const { id } = req.params;
 
-  const slot = await Slot.getOneById(id);
+  const slot = await Slot.findOne({ _id: new ObjectId(id) });
   const { bookings } = slot;
 
   // fetch all the bookings from the database

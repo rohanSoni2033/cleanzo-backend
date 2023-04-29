@@ -1,15 +1,10 @@
 import GlobalError from '../error/GlobalError.js';
-import User, { USER_TYPE } from '../models/User.js';
 import asyncHandler from '../utils/asyncHandler.js';
 import statusCode from '../utils/statusCode.js';
 import filterObject from '../utils/filterObject.js';
 
-class Location {
-  constructor(lat, long) {
-    this.lat = lat;
-    this.long = long;
-  }
-}
+import { User } from '../db/collections.js';
+import { USER_TYPE } from '../utils/constants.js';
 
 export const createUser = asyncHandler(async (req, res, next) => {
   const userFields = req.body;
@@ -36,7 +31,12 @@ export const createUser = asyncHandler(async (req, res, next) => {
   }
 
   if (userType === USER_TYPE.USER) {
-    return await User.createOne(mobileNumber);
+    return await User.insertOne({
+      mobileNumber,
+      userType,
+      vehicles: [],
+      createdAt: new Date(),
+    });
   }
 
   if (
@@ -44,20 +44,18 @@ export const createUser = asyncHandler(async (req, res, next) => {
     (!filteredUserFields.password || !filteredUserFields.name)
   ) {
     return next(
-      new GlobalError(
-        'password and name is required to create a member account',
-        statusCode.BAD_REQUEST
-      )
+      new GlobalError('Password and name is required', statusCode.BAD_REQUEST)
     );
   }
 
   if (userType === USER_TYPE.MEMBER) {
-    return await User.createOne(
+    return await User.insertOne({
       mobileNumber,
-      USER_TYPE.MEMBER,
-      filteredUserFields.password,
-      filteredUserFields.name
-    );
+      userType: USER_TYPE.MEMBER,
+      password: filteredUserFields.password,
+      name: filteredUserFields.name,
+      createdAt: new Date(),
+    });
   }
 
   res.status(statusCode.CREATED).json({
@@ -66,38 +64,32 @@ export const createUser = asyncHandler(async (req, res, next) => {
 });
 
 export const getAllUsers = asyncHandler(async (req, res, next) => {
-  // const requestObject = { ...req.query };
-
-  // const queryFields = ['sort', 'limit', 'page', 'filter'];
-
-  // queryFields.forEach(field =>
-  //   requestObject[field] ? delete requestObject[field] : null
-  // );
-
-  // sorting, filtering, limiting, pagination, aliases,
-  const results = await User.getAll();
+  const users = await User.getAll();
 
   res.status(statusCode.OK).json({
     status: 'success',
     data: {
-      users: results,
+      total: users.length,
+      users,
     },
   });
 });
 
 export const getUser = asyncHandler(async (req, res, next) => {
   const { id } = req.params;
-  const result = await User.getOneById(id);
+  const user = await User.getOneById(id);
   res.status(statusCode.OK).json({
     status: 'success',
-    user: result,
+    data: {
+      user,
+    },
   });
 });
 
 export const updateUser = asyncHandler(async (req, res, next) => {
   const { id } = req.params;
-  const result = await User.updateOneById(id);
-  res.status(statusCode.NO_CONTENT).json({
+  await User.updateOneById(id);
+  res.status(statusCode.OK).json({
     status: 'success',
   });
 });
@@ -120,18 +112,12 @@ export const createMember = asyncHandler(async (req, res, next) => {
 
   if (!mobileNumber) {
     return next(
-      new GlobalError(
-        'Mobile number is required to create a member account',
-        statusCode.BAD_REQUEST
-      )
+      new GlobalError('Mobile number is required', statusCode.BAD_REQUEST)
     );
   }
   if (!password) {
     return next(
-      new GlobalError(
-        'Please provide a password to create a member account',
-        statusCode.BAD_REQUEST
-      )
+      new GlobalError('Password is required', statusCode.BAD_REQUEST)
     );
   }
 
@@ -146,5 +132,9 @@ export const createMember = asyncHandler(async (req, res, next) => {
     );
   }
 
-  const newMember = await User.createOne(filteredMemberFields);
+  await User.insertOne(filteredMemberFields);
+
+  res.status(statusCode.CREATED).json({
+    status: 'success',
+  });
 });

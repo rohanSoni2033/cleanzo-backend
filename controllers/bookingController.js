@@ -1,19 +1,15 @@
 import asyncHandler from './../utils/asyncHandler.js';
 import statusCode from './../utils/statusCode.js';
-import Booking from './../models/Booking.js';
-import Slot from '../models/Slot.js';
 import GlobalError from '../error/GlobalError.js';
+import { ObjectId } from 'mongodb';
+import { MAXIMUM_BOOKING_PER_SLOT } from '../utils/constants.js';
 
-const BookingStatus = {
-  PENDING: 'pending',
-  COMPLETED: 'completed',
-  FAILED: 'failed',
-  CANCELED: 'canceled',
-};
+import { Booking, Slot } from '../db/collections.js';
 
 export const getAllBookings = asyncHandler(async (req, res, next) => {
-  // api/v1.0/bookings?bookingDate=today&bookingStatus=pending
-  const bookings = await Booking.getAll();
+  const bookings = await Booking.find().toArray();
+
+  // serviceId, vehicleId, userId
   res.status(statusCode.OK).json({
     status: 'success',
     data: {
@@ -25,7 +21,9 @@ export const getAllBookings = asyncHandler(async (req, res, next) => {
 
 export const getBooking = asyncHandler(async (req, res, next) => {
   const { id } = req.params;
-  const booking = await Booking.getOneById(id);
+
+  const booking = await Booking.findOne({ _id: new ObjectId(id) });
+
   res.status(statusCode.OK).json({
     status: 'success',
     data: booking,
@@ -37,14 +35,14 @@ export const createBooking = asyncHandler(async (req, res, next) => {
     name,
     mobileNumber,
     address,
+    location,
     serviceId,
-    vehicleModel,
+    vehicleId,
     paymentStatus,
     slotId,
   } = req.body;
 
-  // userId, serviceId, slotId must belong to users, services and slots collection respectively
-  const slot = await Slot.getOneById(slotId);
+  const slot = await Slot.findOne({ _id: new ObjectId(slotId) });
 
   if (!slot) {
     return next(
@@ -54,36 +52,43 @@ export const createBooking = asyncHandler(async (req, res, next) => {
 
   if (!slot.available) {
     return next(
-      new GlobalError(
-        'Sorry, Unfortunately this slot is not available, please choose another',
-        statusCode.BAD_REQUEST
-      )
+      new GlobalError('Slot is not available', statusCode.BAD_REQUEST)
     );
   }
-  // user's details -> name, mobile number, address, location
-  // service details -> service name, price
-  // vehicle's details -> vehicle brand, model name
 
-  await Booking.createOne({
-    userId: req.id,
+  if (slot.bookings.length >= MAXIMUM_BOOKING_PER_SLOT) {
+    await Slot.updateOneById(slot._id, { available: false });
+    return next(
+      new GlobalError('Slot is not available', statusCode.BAD_REQUEST)
+    );
+  }
+
+  const userId = req.userId;
+
+  const result = await Booking.insertOne({
     name,
     mobileNumber,
     address,
-    vehicleModel,
-    serviceId,
-    paymentStatus,
+    location,
+    userId: new ObjectId(userId),
+    serviceId: new ObjectId(serviceId),
+    vehicleId: new ObjectId(vehicleId),
     slotDate: slot.slotDate,
     slotTime: slot.slotTime,
+    paymentStatus,
     bookingStatus: BookingStatus.PENDING,
     createdAt: Date.now(),
   });
 
-  // increment the value of total bookings in this slot
-  // check if the total bookings is equal to total number slots
+  const booking = { bookingId: result.insertedId };
 
-  await Slot.updateOneById(slotId, { available: false });
+  await Slot.updateOne(
+    { _id: new ObjectId(slotId) },
+    { $push: { bookings: booking } }
+  );
 
-  // send sms and notification to the user
+  // sending SMS and notification to the user and admin
+
   res.status(statusCode.CREATED).json({
     status: 'success',
   });
@@ -91,10 +96,21 @@ export const createBooking = asyncHandler(async (req, res, next) => {
 
 export const deleteBooking = asyncHandler(async (req, res, next) => {
   const { id } = req.params;
-  Booking.updateOneById(id, { bookingStatus: BookingStatus.CANCELED });
+
+  const result = await Booking.updateOne(
+    { _id: new ObjectId(id) },
+    { bookingStatus: BookingStatus.CANCELED }
+  );
+
+  if (result.matchedCount > 0 && result.modifiedCount > 0) {
+    return res.status(statusCode.OK).json({
+      status: 'success',
+    });
+  }
 
   res.status(statusCode.OK).json({
-    status: 'success',
+    status: 'fail',
+    message: 'booking not found',
   });
 });
 
@@ -102,5 +118,84 @@ export const updateBooking = asyncHandler(async (req, res, next) => {
   const { id } = req.params;
   const { bookingStatus, paymentStatus } = req.body;
 
-  await Booking.updateOneById(id, { bookingStatus, paymentStatus });
+  const result = await Booking.updateOne(
+    { _id: new ObjectId(id) },
+    {
+      $set: {
+        bookingStatus,
+        paymentStatus,
+      },
+    }
+  );
+
+  if (result.matchedCount > 0 && result.modifiedCount > 0) {
+    return res.status(statusCode.OK).json({
+      status: 'success',
+    });
+  }
+
+  res.status(statusCode.OK).json({
+    status: 'fail',
+    message: 'booking not found',
+  });
+});
+
+export const getMyAllBookings = asyncHandler(async (req, res, next) => {
+  const userId = req.userId;
+
+  const bookings = await Booking.find({ userId }).toArray();
+
+  res.status(statusCode.OK).json({
+    status: 'success',
+    data: {
+      length: bookings.length,
+      data: bookings,
+    },
+  });
+});
+
+export const getMyBooking = asyncHandler(async (req, res, next) => {
+  const userId = req.userId;
+  const bookingId = req.bookingId;
+
+  const result = await Booking.findOne({
+    _id: new ObjectId(bookingId),
+    userId,
+  });
+
+  if (result.matchedCount > 0 && result.modifiedCount > 0) {
+    return res.status(statusCode.OK).json({
+      status: 'success',
+    });
+  }
+
+  res.status(statusCode.OK).json({
+    status: 'fail',
+    message: 'booking not found',
+  });
+});
+
+export const deleteMyBooking = asyncHandler(async (req, res, next) => {
+  const userId = req.userId;
+  const bookingId = req.params;
+
+  const result = await Booking.updateOne(
+    {
+      _id: new ObjectId(bookingId),
+      userId,
+      bookingStatus: BookingStatus.PENDING,
+    },
+    { $set: { bookingStatus: BookingStatus.CANCELED } }
+  );
+
+  if (result.matchedCount > 0 && result.modifiedCount > 0) {
+    return res.status(statusCode.OK).json({
+      status: 'success',
+    });
+  }
+
+  res.status(statusCode.OK).json({
+    status: 'fail',
+    message: 'booking not found',
+  });
 });

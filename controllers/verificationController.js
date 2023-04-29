@@ -11,9 +11,9 @@ const maximumLimit = 9999;
 const accountSid = process.env.TWILIO_ACCOUNT_SID;
 const authToken = process.env.TWILIO_AUTH_TOKEN;
 
-const client = twilio(accountSid, authToken, {
-  lazyLoading: true,
-});
+// const client = twilio(accountSid, authToken, {
+//   lazyLoading: true,
+// });
 
 export const verifyMobileNumberUsingOTP = async mobileNumber => {
   // create a hash using the data, random otp, expires time

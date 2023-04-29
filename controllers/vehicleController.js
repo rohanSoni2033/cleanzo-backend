@@ -1,8 +1,9 @@
 import asyncHandler from '../utils/asyncHandler.js';
-import Vehicle from '../models/Vehicle.js';
+// import Vehicle from '../models/Vehicle.js';
 import GlobalError from '../error/GlobalError.js';
 import { deleteOne, getOne, updateOne } from './factoryController.js';
 import statusCode from '../utils/statusCode.js';
+import { Vehicle } from '../db/collections.js';
 
 export const createVehicle = asyncHandler(async (req, res, next) => {
   const { brand, logo, model } = req.body;
@@ -13,13 +14,13 @@ export const createVehicle = asyncHandler(async (req, res, next) => {
     );
   }
 
-  await Vehicle.createOne({ brand, logo, model });
+  await Vehicle.insertOne({ brand, logo, model });
 
   res.status(statusCode.CREATED).json({ status: 'success' });
 });
 
 export const getAllVehicles = asyncHandler(async (req, res, next) => {
-  const vehicles = await Vehicle.getAll();
+  const vehicles = await Vehicle.find().toArray();
 
   const groupedVehicles = vehicles.reduce((acc, vehicle) => {
     const { _id, brand, logo, model } = vehicle;
@@ -53,3 +54,82 @@ export const getVehicle = getOne(Vehicle);
 export const updateVehicle = updateOne(Vehicle);
 
 export const deleteVehicle = deleteOne(Vehicle);
+
+export const getMyVehicles = asyncHandler(async (req, res, next) => {
+  const userId = req.userId;
+
+  const user = await User.findOne({ _id: new ObjectId(userId) });
+  const vehicles = user.vehicles;
+
+  res.status(statusCode.OK).json({
+    status: 'success',
+    data: {
+      length: vehicles.length,
+      vehicles,
+    },
+  });
+});
+
+export const addMyVehicle = asyncHandler(async (req, res, next) => {
+  const vehicleId = req.body.vehicleId;
+  const userId = req.userId;
+
+  if (!vehicleId) {
+    return next(
+      new GlobalError('Please provide the vehicle id', statusCode.BAD_REQUEST)
+    );
+  }
+
+  const vehicle = await Vehicle.findOne({ _id: new ObjectId(vehicleId) });
+
+  if (!vehicle) {
+    return next(new GlobalError('Vehicle not found', statusCode.BAD_REQUEST));
+  }
+
+  const vehicleObject = {
+    _id: vehicle._id,
+    model: vehicle.model,
+    brand: vehicle.brand,
+    logo: vehicle.logo,
+  };
+
+  const result = await User.updateOne(
+    {
+      _id: new ObjectId(userId),
+      'vehicles._id': { $ne: new ObjectId(vehicleId) },
+    },
+    { $addToSet: { vehicles: vehicleObject } }
+  );
+
+  if (result.matchedCount > 0 && result.modifiedCount > 0) {
+    return res.status(statusCode.OK).json({
+      status: 'success',
+    });
+  }
+
+  res.status(statusCode.OK).json({
+    status: 'fail',
+    message: `${vehicle.brand} ${vehicle.model} is already added`,
+  });
+});
+
+export const removeMyVehicle = asyncHandler(async (req, res, next) => {
+  const userId = req.userId;
+  const vehicleId = req.params.vehicleId;
+
+  const result = await User.updateOne(
+    { _id: new ObjectId(userId) },
+    { $pull: { vehicles: { _id: new ObjectId(vehicleId) } } }
+  );
+
+  if (result.matchedCount > 0 && result.modifiedCount > 0) {
+    return res.status(statusCode.OK).json({
+      status: 'success',
+    });
+  }
+
+  res.status(statusCode.OK).json({
+    status: 'fail',
+    message: `${vehicleId} is not added in your account`,
+  });
+});
