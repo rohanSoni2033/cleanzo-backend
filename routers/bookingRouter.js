@@ -24,13 +24,4 @@ router
   .patch(protectRoute, accessPermission('admin'), updateBooking)
   .delete(protectRoute, accessPermission('admin'), deleteBooking);
 
-// api/v1.0/users/userId/bookings
-// api/v1.0/services/serviceId/bookings
-
-// api/v1.0/bookings?slot=today
-// api/v1.0/bookings?slot=tomorrow
-// api/v1.0/bookings?slot=yesterday
-
-// filter, sort, aliases, limit fields, pagination
-
 export default router;

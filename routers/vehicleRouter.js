@@ -3,12 +3,13 @@ import {
   protectRoute,
   accessPermission,
 } from '../controllers/authController.js';
+
 import {
-  deleteVehicle,
-  updateVehicle,
   getAllVehicles,
   getVehicle,
   createVehicle,
+  updateVehicle,
+  deleteVehicle,
 } from '../controllers/vehicleController.js';
 
 const router = Router();

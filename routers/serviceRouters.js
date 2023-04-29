@@ -14,7 +14,7 @@ import {
 const router = Router();
 
 router.get('/', protectRoute, getAllServices);
-router.post('/', protectRoute, accessPermission('admin'), createService);
+router.post('/', protectRoute, createService);
 
 router
   .route('/:id')

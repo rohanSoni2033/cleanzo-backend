@@ -15,10 +15,13 @@ const router = Router();
 
 router
   .get('/', protectRoute, accessPermission('admin'), getAllUsers)
-  .post('/', protectRoute, accessPermission('admin'), createUser)
-  .get('/:id', protectRoute, accessPermission('admin'), getUser)
-  .patch('/:id', protectRoute, accessPermission('admin'), updateUser)
-  .delete('/:id', protectRoute, accessPermission('admin'), deleteUser);
+  .post('/', protectRoute, accessPermission('admin'), createUser);
+
+router
+  .route('/:id')
+  .get(protectRoute, accessPermission('admin'), getUser)
+  .patch(protectRoute, accessPermission('admin'), updateUser)
+  .delete(protectRoute, accessPermission('admin'), deleteUser);
 
 router.route('/member').get(getAllUsers);
 
