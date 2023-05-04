@@ -3,7 +3,7 @@ import rateLimit from 'express-rate-limit';
 import helmet from 'helmet';
 import sanitize from 'express-mongo-sanitize';
 import xss from 'xss-clean';
-
+import cors from 'cors';
 import GlobalError from './error/GlobalError.js';
 import statusCode from './utils/statusCode.js';
 
@@ -15,11 +15,12 @@ import meRouter from './routers/meRouters.js';
 import slotRouters from './routers/slotRouters.js';
 import bookingRouters from './routers/bookingRouter.js';
 import vehicleRouters from './routers/vehicleRouter.js';
-import membershipRouters from './routers/membershipRouters.js';
-import membershipPlanRouters from './routers/membershipPlanRouters.js';
+// import membershipRouters from './routers/membershipRouters.js';
+// import membershipPlanRouters from './routers/membershipPlanRouters.js';
 
 const app = express();
 
+app.use(cors());
 app.use(helmet());
 app.use(sanitize());
 app.use(xss());
@@ -31,10 +32,10 @@ const limit = rateLimit({
   message: 'Too many request from this ip, try again after sometime',
 });
 
-app.all('*', (req, res, next) => {
-  console.log(`${req.method}, ${req.url}`);
-  next();
-});
+// app.all('*', (req, res, next) => {
+//   console.log(`${req.method}, ${req.url}`);
+//   next();
+// });
 
 app.use('/api/v1.0', limit);
 app.use(express.json({ limit: '10kb' }));
@@ -53,10 +54,13 @@ app.use('/api/v1.0/slots', slotRouters);
 // app.use('/api/v1.0/membership-plans', membershipPlanRouters);
 // app.use('/api/v1.0/memberships', membershipRouters);
 
+app.options('*', cors());
+
 // test endpoint
 app.get('/api/v1.0/test', (req, res, next) => {
   res.status(200).json({
     status: 'success',
+    ok: true,
     message: 'Hello, API is working',
   });
 });
@@ -70,9 +74,7 @@ app.use('*', (req, res, next) => {
 app.use((err, req, res, next) => {
   res.status(err.statusCode).json({
     status: 'error',
-    method: req.method,
-    url: req.url,
-    statusCode: err.statusCode,
+    ok: false,
     message: err.message,
   });
 });
