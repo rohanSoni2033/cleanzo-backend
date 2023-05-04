@@ -17,7 +17,7 @@ export const createVehicle = asyncHandler(async (req, res, next) => {
 
   await Vehicle.insertOne({ brand, logo, model });
 
-  res.status(statusCode.CREATED).json({ status: 'success' });
+  res.status(statusCode.CREATED).json({ ok: true, status: 'success' });
 });
 
 export const getAllVehicles = asyncHandler(async (req, res, next) => {
@@ -43,9 +43,10 @@ export const getAllVehicles = asyncHandler(async (req, res, next) => {
 
   res.status(statusCode.OK).json({
     status: 'success',
+    ok: true,
     data: {
       length: groupedVehicles.length,
-      vehicles: groupedVehicles,
+      data: groupedVehicles,
     },
   });
 });
@@ -64,9 +65,10 @@ export const getMyVehicles = asyncHandler(async (req, res, next) => {
 
   res.status(statusCode.OK).json({
     status: 'success',
+    ok: true,
     data: {
       length: vehicles.length,
-      vehicles,
+      data: vehicles,
     },
   });
 });
@@ -104,12 +106,14 @@ export const addMyVehicle = asyncHandler(async (req, res, next) => {
 
   if (result.matchedCount > 0 && result.modifiedCount > 0) {
     return res.status(statusCode.OK).json({
+      ok: true,
       status: 'success',
     });
   }
 
   res.status(statusCode.OK).json({
     status: 'fail',
+    ok: false,
     message: `${vehicle.brand} ${vehicle.model} is already added`,
   });
 });
@@ -126,11 +130,13 @@ export const removeMyVehicle = asyncHandler(async (req, res, next) => {
   if (result.matchedCount > 0 && result.modifiedCount > 0) {
     return res.status(statusCode.OK).json({
       status: 'success',
+      ok: true,
     });
   }
 
   res.status(statusCode.OK).json({
     status: 'fail',
+    ok: false,
     message: `${vehicleId} is not added in your account`,
   });
 });

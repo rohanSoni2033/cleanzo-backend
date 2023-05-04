@@ -31,6 +31,7 @@ export const createService = asyncHandler(async (req, res, next) => {
 
   res.status(statusCode.OK).json({
     status: 'success',
+    ok: true,
   });
 });
 
@@ -41,7 +42,7 @@ export const updateService = updateOne(Service);
 export const deleteService = deleteOne(Service);
 
 export const getAllServices = asyncHandler(async (req, res, next) => {
-  const { vehicleId } = req.body;
+  const { vehicleId } = req.query;
 
   if (!vehicleId) {
     return next(
@@ -80,9 +81,10 @@ export const getAllServices = asyncHandler(async (req, res, next) => {
 
   res.status(statusCode.OK).json({
     status: 'success',
+    ok: true,
     data: {
       length: groupedServiceList.length,
-      services: groupedServiceList,
+      data: groupedServiceList,
     },
   });
 });

@@ -23,16 +23,6 @@ export const createSlot = asyncHandler(async (req, res, next) => {
     );
   }
 
-  const days = [
-    'monday',
-    'tuesday',
-    'wednesday',
-    'thursday',
-    'friday',
-    'saturday',
-    'sunday',
-  ];
-
   const date = new Date(`${slotDate} ${slotTime}`);
 
   if (date.toString() === 'Invalid Date') {
@@ -44,24 +34,28 @@ export const createSlot = asyncHandler(async (req, res, next) => {
     );
   }
 
+  const slotTimestamp = Date.parse(date);
+
   await Slot.insertOne({
-    slotDay: days[date.getDay() - 1],
-    slotDate: date.toLocaleDateString(),
-    slotTime: date.toLocaleTimeString(),
+    date,
+    timestamp: slotTimestamp,
     available: true,
     bookings: [],
   });
 
   res.status(statusCode.CREATED).json({
     status: 'success',
+    ok: true,
   });
 });
 
 export const getAllSlots = asyncHandler(async (req, res, next) => {
   const { available } = req.query;
+
   const filter = available ? { available: JSON.parse(available) } : {};
 
   const slots = await Slot.find(filter)
+    .filter({ date: { $gt: new Date() } })
     .sort({ slotDate: 1, slotTime: 1 })
     .toArray();
 
@@ -69,9 +63,10 @@ export const getAllSlots = asyncHandler(async (req, res, next) => {
 
   res.status(statusCode.OK).json({
     status: 'success',
+    ok: true,
     data: {
       total: slots.length,
-      slots,
+      data: slots,
     },
   });
 });
@@ -85,9 +80,10 @@ export const getSlotBookings = asyncHandler(async (req, res, next) => {
   // fetch all the bookings from the database
   res.status(statusCode.OK).json({
     status: 'success',
+    ok: true,
     data: {
       length: bookings.length,
-      bookings,
+      data: bookings,
     },
   });
 });

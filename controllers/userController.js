@@ -60,6 +60,7 @@ export const createUser = asyncHandler(async (req, res, next) => {
   }
 
   res.status(statusCode.CREATED).json({
+    ok: true,
     status: 'success',
   });
 });
@@ -69,9 +70,10 @@ export const getAllUsers = asyncHandler(async (req, res, next) => {
 
   res.status(statusCode.OK).json({
     status: 'success',
+    ok: true,
     data: {
       total: users.length,
-      users,
+      data: users,
     },
   });
 });
@@ -81,6 +83,7 @@ export const getUser = asyncHandler(async (req, res, next) => {
   const user = await User.findOne({ _id: new ObjectId(id) });
   res.status(statusCode.OK).json({
     status: 'success',
+    ok: true,
     data: {
       user,
     },
@@ -93,6 +96,7 @@ export const updateUser = asyncHandler(async (req, res, next) => {
   await User.updateOne({ _id: new ObjectId(id) }, { data });
   res.status(statusCode.OK).json({
     status: 'success',
+    ok: true,
   });
 });
 
@@ -102,6 +106,7 @@ export const deleteUser = asyncHandler(async (req, res, next) => {
 
   res.status(statusCode.OK).json({
     status: 'success',
+    ok: true,
   });
 });
 
@@ -145,5 +150,6 @@ export const createMember = asyncHandler(async (req, res, next) => {
 
   res.status(statusCode.CREATED).json({
     status: 'success',
+    ok: true,
   });
 });

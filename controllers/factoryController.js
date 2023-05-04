@@ -8,6 +8,7 @@ export const getAll = collection => {
     const results = await collection.find().toArray();
     res.status(statusCode.OK).json({
       status: 'success',
+      ok: true,
       data: {
         total: results.length,
         data: results,
@@ -22,6 +23,7 @@ export const getOne = collection => {
     const result = await collection.findOne({ _id: new ObjectId(id) });
     res.status(statusCode.OK).json({
       status: 'success',
+      ok: true,
       data: result,
     });
   });
@@ -33,6 +35,7 @@ export const deleteOne = collection => {
     await collection.deleteOne({ _id: new ObjectId(id) });
     res.status(statusCode.OK).json({
       status: 'success',
+      ok: true,
     });
   });
 };
@@ -45,6 +48,7 @@ export const updateOne = collection => {
     await collection.updateOne({ _id: new ObjectId(id) }, { $set: data });
     res.status(statusCode.OK).json({
       status: 'success',
+      ok: true,
     });
   });
 };

@@ -32,6 +32,7 @@ export const loginController = asyncHandler(async function (req, res, next) {
 
   res.status(statusCode.OK).json({
     status: 'success',
+    ok: true,
     data: { hashedString, mobileNumber, otpExpiresTimestamp },
   });
 });
@@ -54,6 +55,7 @@ export const verifyOTPController = asyncHandler(async function (
     await User.updateOneById(req.userId, { mobileNumber });
     return res.status(statusCode.OK).json({
       status: 'success',
+      ok: true,
     });
   }
 
@@ -80,6 +82,7 @@ export const verifyOTPController = asyncHandler(async function (
 
   return res.status(statusCode.OK).json({
     status: 'success',
+    ok: true,
     data: {
       token,
     },
@@ -118,6 +121,7 @@ export const memberLoginController = asyncHandler(async (req, res, next) => {
 
   res.status(statusCode.OK).json({
     status: 'success',
+    ok: true,
     data: {
       mobileNumber,
       otpExpiresTimestamp,

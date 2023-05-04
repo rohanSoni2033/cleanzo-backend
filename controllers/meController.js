@@ -14,6 +14,7 @@ export const getMeController = asyncHandler(async (req, res, next) => {
 
   res.status(statusCode.OK).json({
     status: 'success',
+    ok: true,
     data: user,
   });
 });
@@ -48,6 +49,7 @@ export const updateMeController = asyncHandler(async (req, res, next) => {
 
   res.status(statusCode.OK).json({
     status: 'success',
+    ok: true,
   });
 });
 
@@ -61,6 +63,7 @@ export const deleteMeController = asyncHandler(async (req, res, next) => {
 
   res.status(statusCode.OK).json({
     status: 'success',
+    ok: true,
   });
 });
 
@@ -105,6 +108,7 @@ export const updateMobileNumber = asyncHandler(async (req, res, next) => {
 
   res.status(statusCode.OK).json({
     status: 'success',
+    ok: true,
     data: {
       mobileNumber: newMobileNumber,
       otpExpiresTimestamp,
