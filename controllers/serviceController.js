@@ -66,18 +66,53 @@ export const getAllServices = asyncHandler(async (req, res, next) => {
     delete service.serviceBasePrice;
   });
 
-  const groupedServiceList = servicesList.reduce((acc, obj) => {
-    const key = obj.serviceCategoryName;
+  const groupedServiceList = servicesList.reduce((acc, service) => {
+    const {
+      _id,
+      serviceCategoryId,
+      serviceCategoryName,
+      serviceName,
+      durationOfService,
+      description,
+      serviceImageUrl,
+      serviceDetails,
+      totalPrice,
+    } = service;
 
-    delete obj.serviceCategoryId;
-    delete obj.serviceCategoryName;
+    const existingServiceIndex = acc.findIndex(
+      group => group.serviceCategoryId === serviceCategoryId
+    );
 
-    if (!acc[key]) {
-      acc[key] = [];
+    if (existingServiceIndex >= 0) {
+      acc[existingServiceIndex].services.push({
+        _id,
+        serviceName,
+        durationOfService,
+        description,
+        serviceImageUrl,
+        serviceDetails,
+        totalPrice,
+      });
+    } else {
+      acc.push({
+        serviceCategoryId,
+        serviceCategoryName,
+        services: [
+          {
+            _id,
+            serviceName,
+            durationOfService,
+            description,
+            serviceImageUrl,
+            serviceDetails,
+            totalPrice,
+          },
+        ],
+      });
     }
-    acc[key].push(obj);
+
     return acc;
-  }, {});
+  }, []);
 
   res.status(statusCode.OK).json({
     status: 'success',
