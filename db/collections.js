@@ -11,3 +11,5 @@ export const Slot = database.collection('slots');
 export const MembershipPlan = database.collection('membershipPlans');
 export const Membership = database.collection('membership');
 export const MembershipBooking = database.collection('membershipBookings');
+
+export const BusinessRelated = database.collection('businessRelated');
