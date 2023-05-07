@@ -10,7 +10,10 @@ import { User } from '../db/collections.js';
 export const getMeController = asyncHandler(async (req, res, next) => {
   const userId = req.userId;
 
-  const user = await User.findOne({ _id: new ObjectId(userId) });
+  const user = await User.findOne(
+    { _id: new ObjectId(userId) },
+    { projection: { createdAt: 0, userType: 0 } }
+  );
 
   res.status(statusCode.OK).json({
     status: 'success',

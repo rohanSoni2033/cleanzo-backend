@@ -1,5 +1,4 @@
 import asyncHandler from '../utils/asyncHandler.js';
-// import Vehicle from '../models/Vehicle.js';
 import GlobalError from '../error/GlobalError.js';
 import { deleteOne, getOne, updateOne } from './factoryController.js';
 import statusCode from '../utils/statusCode.js';
