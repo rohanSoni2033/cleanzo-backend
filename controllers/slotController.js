@@ -59,14 +59,41 @@ export const getAllSlots = asyncHandler(async (req, res, next) => {
     .sort({ slotDate: 1, slotTime: 1 })
     .toArray();
 
-  slots.forEach(slot => delete slot.bookings);
+  const groupedSlots = slots.reduce((acc, slot) => {
+    const { _id, timestamp, available } = slot;
+
+    const date = new Date(timestamp).toLocaleDateString('default', {
+      month: 'short',
+      day: '2-digit',
+      year: '2-digit',
+      weekday: 'short',
+    });
+
+    const exitedSlotIndex = acc.findIndex(s => date === s.date);
+
+    if (exitedSlotIndex >= 0) {
+      acc[exitedSlotIndex].slots.push({
+        _id,
+        timestamp,
+        available,
+      });
+      return acc;
+    }
+
+    acc.push({
+      date,
+      slots: [{ _id, timestamp, available }],
+    });
+
+    return acc;
+  }, []);
 
   res.status(statusCode.OK).json({
     status: 'success',
     ok: true,
     data: {
       total: slots.length,
-      data: slots,
+      data: groupedSlots,
     },
   });
 });
