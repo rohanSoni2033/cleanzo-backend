@@ -5,10 +5,58 @@ import { ObjectId } from 'mongodb';
 import { MAXIMUM_BOOKING_PER_SLOT } from '../utils/constants.js';
 import { BookingStatus } from '../utils/constants.js';
 
-import { Booking, Slot } from '../db/collections.js';
+import { Booking, Service, Slot, Vehicle } from '../db/collections.js';
 
 export const getAllBookings = asyncHandler(async (req, res, next) => {
-  const bookings = await Booking.find().toArray();
+  const bookings = await Booking.aggregate([
+    {
+      $lookup: {
+        from: 'users',
+        localField: 'userId',
+        foreignField: '_id',
+        as: 'user',
+      },
+    },
+    {
+      $project: {
+        _id: 1,
+        slotTime: 1,
+        slotDate: 1,
+        name: 1,
+        mobileNumber: 1,
+        address: 1,
+        location: 1,
+        paymentStatus: 1,
+        user: {
+          $arrayElemAt: ['$user', 0],
+        },
+        service: 1,
+        vehicle: 1,
+        createdAt: 1,
+      },
+    },
+    {
+      $project: {
+        _id: 1,
+        slotTime: 1,
+        slotDate: 1,
+        name: 1,
+        mobileNumber: 1,
+        address: 1,
+        location: 1,
+        paymentStatus: 1,
+        user: {
+          name: 1,
+          mobileNumber: 1,
+          address: 1,
+          location: 1,
+        },
+        service: 1,
+        vehicle: 1,
+        createdAt: 1,
+      },
+    },
+  ]).toArray();
 
   res.status(statusCode.OK).json({
     status: 'success',
@@ -38,10 +86,10 @@ export const createBooking = asyncHandler(async (req, res, next) => {
     mobileNumber,
     address,
     location,
-    serviceId,
-    vehicleId,
     paymentStatus,
     slotId,
+    serviceId,
+    vehicleId,
   } = req.body;
 
   const slot = await Slot.findOne({ _id: new ObjectId(slotId) });
@@ -52,23 +100,44 @@ export const createBooking = asyncHandler(async (req, res, next) => {
     );
   }
 
-  if (!slot.available || slot.date <= Date.now()) {
+  if (!slot.available || slot.timestamp <= Date.now()) {
     return next(
       new GlobalError('Slot is not available', statusCode.BAD_REQUEST)
     );
   }
 
   if (slot.bookings.length >= MAXIMUM_BOOKING_PER_SLOT) {
-    await Slot.updateOneById(slot._id, { available: false });
+    await Slot.updateOne(
+      { _id: new ObjectId(slot._id) },
+      {
+        $set: { available: false },
+      }
+    );
     return next(
       new GlobalError('Slot is not available', statusCode.BAD_REQUEST)
     );
   }
 
-  const slotDate = new Date(slot.date).toLocaleDateString();
-  const slotTime = new Date(slot.date).toLocaleTimeString();
+  const slotDate = new Date(slot.timestamp).toLocaleDateString();
+  const slotTime = new Date(slot.timestamp).toLocaleTimeString();
 
   const userId = req.userId;
+
+  const serviceResult = await Service.findOne({ _id: new ObjectId(serviceId) });
+
+  if (!serviceResult) {
+    return next(new GlobalError('service not found', statusCode.NOT_FOUND));
+  }
+
+  const { serviceName, serviceBasePrice } = serviceResult;
+
+  const vehicleResult = await Vehicle.findOne({ _id: new ObjectId(vehicleId) });
+
+  if (!vehicleResult) {
+    return next(new GlobalError('vehicle not found', statusCode.NOT_FOUND));
+  }
+
+  const { brand, model, logo, additionalServicePrice } = vehicleResult;
 
   const result = await Booking.insertOne({
     name,
@@ -76,8 +145,16 @@ export const createBooking = asyncHandler(async (req, res, next) => {
     address,
     location,
     userId: new ObjectId(userId),
-    serviceId: new ObjectId(serviceId),
-    vehicleId: new ObjectId(vehicleId),
+    service: {
+      serviceName,
+      serviceBasePrice,
+    },
+    vehicle: {
+      brand,
+      model,
+      logo,
+      additionalServicePrice,
+    },
     slotDate,
     slotTime,
     paymentStatus,
@@ -105,7 +182,7 @@ export const deleteBooking = asyncHandler(async (req, res, next) => {
 
   const result = await Booking.updateOne(
     { _id: new ObjectId(id) },
-    { bookingStatus: BookingStatus.CANCELED }
+    { $set: { bookingStatus: BookingStatus.CANCELED } }
   );
 
   if (result.matchedCount > 0 && result.modifiedCount > 0) {
@@ -151,7 +228,14 @@ export const updateBooking = asyncHandler(async (req, res, next) => {
 export const getMyAllBookings = asyncHandler(async (req, res, next) => {
   const userId = req.userId;
 
-  const bookings = await Booking.find({ userId }).toArray();
+  const bookings = await Booking.find(
+    {
+      userId: new ObjectId(userId),
+    },
+    { projection: { userId: 0 } }
+  )
+    .sort({ createdAt: 1 })
+    .toArray();
 
   res.status(statusCode.OK).json({
     status: 'success',
@@ -165,23 +249,24 @@ export const getMyAllBookings = asyncHandler(async (req, res, next) => {
 
 export const getMyBooking = asyncHandler(async (req, res, next) => {
   const userId = req.userId;
-  const bookingId = req.bookingId;
+  const bookingId = req.params.bookingId;
 
-  const result = await Booking.findOne({
-    _id: new ObjectId(bookingId),
-    userId,
-  });
+  const result = await Booking.findOne(
+    {
+      _id: new ObjectId(bookingId),
+      userId: new ObjectId(userId),
+    },
+    { projection: { userId: 0 } }
+  );
 
-  if (result.matchedCount > 0 && result.modifiedCount > 0) {
-    return res.status(statusCode.OK).json({
-      status: 'success',
-    });
+  if (!result) {
+    return next(new GlobalError('booking not found', statusCode.NOT_FOUND));
   }
 
   res.status(statusCode.OK).json({
-    status: 'fail',
+    status: 'success',
     ok: true,
-    message: 'booking not found',
+    data: result,
   });
 });
 
