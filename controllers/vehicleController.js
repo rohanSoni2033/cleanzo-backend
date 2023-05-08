@@ -28,12 +28,12 @@ export const getAllVehicles = asyncHandler(async (req, res, next) => {
     const existingBrandIndex = acc.findIndex(group => group.brand === brand);
 
     if (existingBrandIndex >= 0) {
-      acc[existingBrandIndex].models.push({ _id, model });
+      acc[existingBrandIndex].models.push({ _id, model, logo });
     } else {
       acc.push({
         brand: brand,
         logo: logo,
-        models: [{ _id, model }],
+        models: [{ _id, model, logo }],
       });
     }
 
@@ -60,6 +60,7 @@ export const getMyVehicles = asyncHandler(async (req, res, next) => {
   const userId = req.userId;
 
   const user = await User.findOne({ _id: new ObjectId(userId) });
+
   const vehicles = user.vehicles;
 
   res.status(statusCode.OK).json({
