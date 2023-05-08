@@ -4,7 +4,6 @@ import statusCode from '../utils/statusCode.js';
 
 export const getAll = collection => {
   return asyncHandler(async (req, res, next) => {
-    console.log(collection);
     const results = await collection.find().toArray();
     res.status(statusCode.OK).json({
       status: 'success',
