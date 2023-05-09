@@ -23,9 +23,13 @@ export const createSlot = asyncHandler(async (req, res, next) => {
     );
   }
 
-  const date = new Date(`${slotDate} ${slotTime}`);
+  const slotDateInstance = new Date(`${slotDate}`);
+  const slotTimeInstance = new Date(`${slotDate} ${slotTime}`);
 
-  if (date.toString() === 'Invalid Date') {
+  if (
+    slotDateInstance.toString() === 'Invalid Date' ||
+    slotTimeInstance.toString() === 'Invalid Date'
+  ) {
     return next(
       new GlobalError(
         'Please provide a valid date(DD/MMM/YYYY) and time(HH:MM AM/PM)',
@@ -34,11 +38,19 @@ export const createSlot = asyncHandler(async (req, res, next) => {
     );
   }
 
-  const slotTimestamp = Date.parse(date);
+  const slot = Slot.findOne({ slotTime: slotTimeInstance.getTime() });
+  if (slot) {
+    return next(
+      new GlobalError(
+        'slot with exact time and date exits',
+        statusCode.BAD_REQUEST
+      )
+    );
+  }
 
   await Slot.insertOne({
-    date,
-    timestamp: slotTimestamp,
+    slotDate: slotDateInstance.getTime(),
+    slotTime: slotTimeInstance.getTime(),
     available: true,
     bookings: [],
   });
@@ -55,34 +67,27 @@ export const getAllSlots = asyncHandler(async (req, res, next) => {
   const filter = available ? { available: JSON.parse(available) } : {};
 
   const slots = await Slot.find(filter)
-    .filter({ date: { $gt: new Date() } })
+    .filter({ slotTime: { $gt: new Date().getTime() } })
     .sort({ slotDate: 1, slotTime: 1 })
     .toArray();
 
   const groupedSlots = slots.reduce((acc, slot) => {
-    const { _id, timestamp, available } = slot;
+    const { _id, slotDate, slotTime, available } = slot;
 
-    const date = new Date(timestamp).toLocaleDateString('default', {
-      month: 'short',
-      day: '2-digit',
-      year: '2-digit',
-      weekday: 'short',
-    });
-
-    const exitedSlotIndex = acc.findIndex(s => date === s.date);
+    const exitedSlotIndex = acc.findIndex(s => s.slotDate === slotDate);
 
     if (exitedSlotIndex >= 0) {
       acc[exitedSlotIndex].slots.push({
         _id,
-        timestamp,
+        slotTime,
         available,
       });
       return acc;
     }
 
     acc.push({
-      date,
-      slots: [{ _id, timestamp, available }],
+      slotDate,
+      slots: [{ _id, slotTime, available }],
     });
 
     return acc;
