@@ -38,7 +38,8 @@ export const createSlot = asyncHandler(async (req, res, next) => {
     );
   }
 
-  const slot = Slot.findOne({ slotTime: slotTimeInstance.getTime() });
+  const slot = await Slot.findOne({ slotTime: slotTimeInstance.getTime() });
+
   if (slot) {
     return next(
       new GlobalError(
