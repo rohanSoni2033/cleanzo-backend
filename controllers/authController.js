@@ -4,62 +4,71 @@ import asyncHandler from './../utils/asyncHandler.js';
 import jwt from 'jsonwebtoken';
 import errmsg from '../error/errorMessages.js';
 
-import {
-  verifyMobileNumberUsingOTP,
-  verifyOTP,
-} from './verificationController.js';
+import { verifyMobileUsingOtp } from './verificationController.js';
+import { compare } from './../utils/hash.js';
 
 import { ObjectId } from 'mongodb';
 
 import { User } from './../db/collections.js';
 import { USER_TYPE } from '../utils/constants.js';
 
-export const loginController = asyncHandler(async function (req, res, next) {
-  const { mobileNumber } = req.body;
+export const login = asyncHandler(async function (req, res, next) {
+  // Get the mobile number from the request body
+  const { mobile } = req.body;
 
-  if (
-    !mobileNumber ||
-    mobileNumber.length !== 10 ||
-    !mobileNumber.match(/^[0-9]*$/)
-  ) {
+  // Check whether the mobile is undefined or not, if so then throw an error back to the user in response
+
+  if (!mobile) {
+    return next(
+      new GlobalError('Please enter the mobile number', statusCode.BAD_REQUEST)
+    );
+  }
+
+  // Validate the mobile number
+  if (mobile.length !== 10 || !mobile.match(/^[0-9]*$/)) {
     return next(
       new GlobalError(errmsg.INVALID_MOBILE_NUMBER, statusCode.BAD_REQUEST)
     );
   }
 
-  const { hashedString, otpExpiresTimestamp } =
-    await verifyMobileNumberUsingOTP(mobileNumber);
+  const { hash, otpExpiresAt } = await verifyMobileUsingOtp(mobile);
 
   res.status(statusCode.OK).json({
     status: 'success',
     ok: true,
-    data: { hashedString, mobileNumber, otpExpiresTimestamp },
+    data: { hash, mobile, otpExpiresAt },
   });
 });
 
-export const verifyOTPController = asyncHandler(async function (
-  req,
-  res,
-  next
-) {
-  const { mobileNumber, hashedString, otp, otpExpiresTimestamp } = req.body;
+export const verifyOTP = asyncHandler(async function (req, res, next) {
+  const { mobile, otp, otpExpiresAt, hash } = req.body;
 
-  await validDataForOTPVerification(
-    mobileNumber,
-    hashedString,
-    otp,
-    otpExpiresTimestamp
-  );
-
-  if (req.userId && req.headers.authorization) {
-    await User.updateOneById(req.userId, { mobileNumber });
-    return res.status(statusCode.OK).json({
-      status: 'success',
-      ok: true,
-    });
+  if (!mobile) {
+    return next(
+      new GlobalError(errmsg.NO_MOBILE_NUMBER_PROVIDED, statusCode.UNAUTHORIZED)
+    );
   }
 
-  const user = await User.findOne({ mobileNumber });
+  if (!otp || !otpExpiresAt || !hash) {
+    return next(
+      new GlobalError(errmsg.REQUIRED_FIELDS_MISSING, statusCode.BAD_REQUEST)
+    );
+  }
+
+  const otpIsCorrect = await compare(
+    { mobile, otp: Number(otp), otpExpiresAt: Number(otpExpiresAt) },
+    hash
+  );
+
+  if (Date.now() > Number(otpExpiresAt)) {
+    return next(new GlobalError(errmsg.OTP_EXPIRES, statusCode.BAD_REQUEST));
+  }
+
+  if (!otpIsCorrect) {
+    return next(new GlobalError(errmsg.WRONG_OTP, statusCode.BAD_REQUEST));
+  }
+
+  const user = await User.findOne({ mobile });
 
   let userId;
 
@@ -67,10 +76,11 @@ export const verifyOTPController = asyncHandler(async function (
     userId = user._id;
   } else {
     const { insertedId } = await User.insertOne({
-      mobileNumber,
+      mobile,
       userType: USER_TYPE.USER,
-      createdAt: Date.now(),
+      createdAt: new Date(),
       vehicles: [],
+      addresses: [],
     });
 
     userId = insertedId;
@@ -88,69 +98,6 @@ export const verifyOTPController = asyncHandler(async function (
     },
   });
 });
-
-export const memberLoginController = asyncHandler(async (req, res, next) => {
-  const { mobileNumber, password } = req.body;
-  if (!mobileNumber) {
-    return next(
-      new GlobalError(errmsg.NO_MOBILE_NUMBER, statusCode.BAD_REQUEST)
-    );
-  }
-
-  if (!password) {
-    return next(new GlobalError(errmsg.NO_PASSWORD, statusCode.BAD_REQUEST));
-  }
-
-  const user = await User.findOne({
-    mobileNumber,
-    $or: [{ userType: 'team' }, { userType: 'admin' }],
-  });
-
-  if (!user) {
-    return next(new GlobalError(errmsg.NO_MEMBER_FOUND, statusCode.NOT_FOUND));
-  }
-
-  const isPasswordCorrect = password === user.password;
-
-  if (!isPasswordCorrect) {
-    return next(new GlobalError(errmsg.WRONG_PASSWORD, statusCode.BAD_REQUEST));
-  }
-
-  const { hashedString, otpExpiresTimestamp } =
-    await verifyMobileNumberUsingOTP(mobileNumber);
-
-  res.status(statusCode.OK).json({
-    status: 'success',
-    ok: true,
-    data: {
-      mobileNumber,
-      otpExpiresTimestamp,
-      hashedString,
-    },
-  });
-});
-
-const validDataForOTPVerification = async (
-  mobileNumber,
-  hashedString,
-  otp,
-  otpExpiresTimestamp
-) => {
-  if (!mobileNumber) {
-    throw new GlobalError(
-      errmsg.NO_MOBILE_NUMBER_PROVIDED,
-      statusCode.UNAUTHORIZED
-    );
-  }
-
-  if (!hashedString || !otp || !otpExpiresTimestamp) {
-    throw new GlobalError(
-      errmsg.REQUIRED_FIELDS_MISSING,
-      statusCode.BAD_REQUEST
-    );
-  }
-  await verifyOTP(mobileNumber, otp, otpExpiresTimestamp, hashedString);
-};
 
 export const protectRoute = asyncHandler(async function (req, res, next) {
   const { authorization } = req.headers;
@@ -178,15 +125,14 @@ export const protectRoute = asyncHandler(async function (req, res, next) {
     );
   }
 
-  req.userId = user._id.toString();
-  req.userType = user.userType;
+  req.user = user;
 
   next();
 });
 
 export const accessPermission = (...userType) => {
   return asyncHandler(async (req, res, next) => {
-    if (userType.includes(req.userType)) {
+    if (userType.includes(req.user.userType)) {
       return next();
     }
     return next(
@@ -194,3 +140,44 @@ export const accessPermission = (...userType) => {
     );
   });
 };
+
+export const memberLogin = asyncHandler(async (req, res, next) => {
+  const { mobile, password } = req.body;
+
+  if (!mobile) {
+    return next(
+      new GlobalError(errmsg.NO_MOBILE_NUMBER, statusCode.BAD_REQUEST)
+    );
+  }
+
+  if (!password) {
+    return next(new GlobalError(errmsg.NO_PASSWORD, statusCode.BAD_REQUEST));
+  }
+
+  const user = await User.findOne({
+    mobile,
+    $or: [{ userType: 'team-member' }, { userType: 'admin' }],
+  });
+
+  if (!user) {
+    return next(new GlobalError(errmsg.NO_MEMBER_FOUND, statusCode.NOT_FOUND));
+  }
+
+  const isPasswordCorrect = password === user.password;
+
+  if (!isPasswordCorrect) {
+    return next(new GlobalError(errmsg.WRONG_PASSWORD, statusCode.BAD_REQUEST));
+  }
+
+  const { hash, otpExpiresAt } = await verifyMobileUsingOtp(mobileNumber);
+
+  res.status(statusCode.OK).json({
+    status: 'success',
+    ok: true,
+    data: {
+      mobile,
+      otpExpiresAt,
+      hash,
+    },
+  });
+});

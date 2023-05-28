@@ -5,20 +5,6 @@ import statusCode from '../utils/statusCode.js';
 import { Vehicle, User } from '../db/collections.js';
 import { ObjectId } from 'mongodb';
 
-export const createVehicle = asyncHandler(async (req, res, next) => {
-  const { brand, logo, model } = req.body;
-
-  if (!brand || !logo || !model) {
-    return next(
-      new GlobalError('Please define all the required fields', statusCode.OK)
-    );
-  }
-
-  await Vehicle.insertOne({ brand, logo, model });
-
-  res.status(statusCode.CREATED).json({ ok: true, status: 'success' });
-});
-
 export const getAllVehicles = asyncHandler(async (req, res, next) => {
   const vehicles = await Vehicle.find().toArray();
 
@@ -57,7 +43,7 @@ export const updateVehicle = updateOne(Vehicle);
 export const deleteVehicle = deleteOne(Vehicle);
 
 export const getMyVehicles = asyncHandler(async (req, res, next) => {
-  const userId = req.userId;
+  const { _id: userId } = req.user;
 
   const user = await User.findOne({ _id: new ObjectId(userId) });
 
@@ -74,8 +60,8 @@ export const getMyVehicles = asyncHandler(async (req, res, next) => {
 });
 
 export const addMyVehicle = asyncHandler(async (req, res, next) => {
-  const vehicleId = req.body.vehicleId;
-  const userId = req.userId;
+  const { vehicleId } = req.body;
+  const { _id: userId } = req.user;
 
   if (!vehicleId) {
     return next(
@@ -92,7 +78,6 @@ export const addMyVehicle = asyncHandler(async (req, res, next) => {
   const vehicleObject = {
     _id: vehicle._id,
     model: vehicle.model,
-    brand: vehicle.brand,
     logo: vehicle.logo,
   };
 
@@ -119,7 +104,7 @@ export const addMyVehicle = asyncHandler(async (req, res, next) => {
 });
 
 export const removeMyVehicle = asyncHandler(async (req, res, next) => {
-  const userId = req.userId;
+  const { _id: userId } = req.user;
   const vehicleId = req.params.vehicleId;
 
   const result = await User.updateOne(

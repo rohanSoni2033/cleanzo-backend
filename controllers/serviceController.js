@@ -4,42 +4,9 @@ import asyncHandler from '../utils/asyncHandler.js';
 import statusCode from '../utils/statusCode.js';
 import { Service, Vehicle } from '../db/collections.js';
 
-import { getOne, updateOne, deleteOne } from './factoryController.js';
-
-export const createService = asyncHandler(async (req, res, next) => {
-  const {
-    serviceCategoryId,
-    serviceCategoryName,
-    serviceName,
-    durationOfService,
-    serviceBasePrice,
-    description,
-    image,
-    details,
-  } = req.body;
-
-  await Service.insertOne({
-    serviceCategoryId,
-    serviceCategoryName,
-    serviceName,
-    durationOfService,
-    serviceBasePrice,
-    description,
-    image,
-    details,
-  });
-
-  res.status(statusCode.OK).json({
-    status: 'success',
-    ok: true,
-  });
-});
+import { getOne } from './factoryController.js';
 
 export const getService = getOne(Service);
-
-export const updateService = updateOne(Service);
-
-export const deleteService = deleteOne(Service);
 
 export const getAllServices = asyncHandler(async (req, res, next) => {
   const { vehicleId } = req.query;

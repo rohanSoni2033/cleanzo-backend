@@ -1,14 +1,12 @@
 import GlobalError from '../error/GlobalError.js';
 import asyncHandler from '../utils/asyncHandler.js';
 import statusCode from '../utils/statusCode.js';
-import filterObject from '../utils/filterObject.js';
-import { verifyMobileNumberUsingOTP } from './verificationController.js';
 import { ObjectId } from 'mongodb';
 
 import { User } from '../db/collections.js';
 
 export const getMeController = asyncHandler(async (req, res, next) => {
-  const userId = req.userId;
+  const { _id: userId } = req.user;
 
   const user = await User.findOne(
     { _id: new ObjectId(userId) },
@@ -22,32 +20,23 @@ export const getMeController = asyncHandler(async (req, res, next) => {
   });
 });
 
-export const updateMeController = asyncHandler(async (req, res, next) => {
-  const fieldsObjForUpdate = req.body;
+export const updateUserName = asyncHandler(async (req, res, next) => {
+  const { firstName, lastName } = req.body;
 
-  const fieldsToUpdate = filterObject(fieldsObjForUpdate, [
-    'name',
-    'address',
-    'email',
-    'location',
-  ]);
-
-  if (fieldsObjForUpdate.vehicle) {
-    if (!Array.isArray(fieldsObjForUpdate.vehicle)) {
-      return next(
-        new GlobalError(
-          'Vehicle must be type of an array',
-          statusCode.BAD_REQUEST
-        )
-      );
-    }
+  if (!firstName || !lastName) {
+    return next(
+      new GlobalError(
+        'Please provide first name and the last name',
+        statusCode.BAD_REQUEST
+      )
+    );
   }
 
-  const userId = req.userId;
+  const { _id: userId } = req.user;
 
-  const result = await User.updateOne(
+  await User.updateOne(
     { _id: new ObjectId(userId) },
-    { $set: fieldsToUpdate }
+    { $set: { firstName, lastName } }
   );
 
   res.status(statusCode.OK).json({
@@ -56,8 +45,81 @@ export const updateMeController = asyncHandler(async (req, res, next) => {
   });
 });
 
+export const addUserAddress = asyncHandler(async (req, res, next) => {
+  const { name, mobile, city, area, locality, address, addressType } = req.body;
+
+  if (
+    !name ||
+    !mobile ||
+    !city ||
+    !area ||
+    !locality ||
+    !address ||
+    !addressType
+  ) {
+    return next(
+      new GlobalError(
+        'Please provide all the required fields',
+        statusCode.BAD_REQUEST
+      )
+    );
+  }
+
+  const { _id: userId } = req.user;
+
+  await User.updateOne(
+    { _id: new ObjectId(userId) },
+    {
+      $push: {
+        addresses: {
+          id: new ObjectId(),
+          name,
+          mobile,
+          city,
+          area,
+          locality,
+          address,
+          addressType,
+        },
+      },
+    }
+  );
+
+  res.status(statusCode.OK).json({
+    status: 'success',
+    ok: true,
+  });
+});
+
+export const deleteUserAddress = asyncHandler(async (req, res, next) => {
+  const { _id: userId } = req.user;
+  const { addressId } = req.params;
+
+  const result = await User.updateOne(
+    {
+      _id: new ObjectId(userId),
+    },
+    {
+      $pull: { addresses: { id: new ObjectId(addressId) } },
+    }
+  );
+
+  if (result.matchedCount > 0 && result.modifiedCount > 0) {
+    res.status(statusCode.OK).json({
+      status: 'success',
+      ok: true,
+    });
+  } else {
+    return res.status(statusCode.BAD_REQUEST).json({
+      status: 'fail',
+      ok: false,
+      message: 'address not found',
+    });
+  }
+});
+
 export const deleteMeController = asyncHandler(async (req, res, next) => {
-  const userId = req.userId;
+  const { _id: userId } = req.user;
 
   const result = await User.updateOne(
     { _id: new ObjectId(userId) },
@@ -82,7 +144,9 @@ export const updateMobileNumber = asyncHandler(async (req, res, next) => {
     );
   }
 
-  const currentUser = await User.findOne(req.userId);
+  const { _id: userId } = req.user;
+
+  const currentUser = await User.findOne(userId);
 
   if (!currentUser) {
     return next(

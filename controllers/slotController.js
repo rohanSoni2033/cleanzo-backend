@@ -1,4 +1,3 @@
-// import Slot from './../models/Slot.js';
 import asyncHandler from '../utils/asyncHandler.js';
 import statusCode from '../utils/statusCode.js';
 import GlobalError from '../error/GlobalError.js';
@@ -12,9 +11,9 @@ import { ObjectId } from 'mongodb';
 import { Slot } from './../db/collections.js';
 
 export const createSlot = asyncHandler(async (req, res, next) => {
-  const { slotDate, slotTime } = req.body;
+  const { date, time } = req.body;
 
-  if (!slotDate || !slotTime) {
+  if (!date || !time) {
     next(
       new GlobalError(
         'Please define date and time for the slot',
@@ -23,13 +22,9 @@ export const createSlot = asyncHandler(async (req, res, next) => {
     );
   }
 
-  const slotDateInstance = new Date(`${slotDate}`);
-  const slotTimeInstance = new Date(`${slotDate} ${slotTime}`);
+  const slotTime = new Date(`${date} ${time}`);
 
-  if (
-    slotDateInstance.toString() === 'Invalid Date' ||
-    slotTimeInstance.toString() === 'Invalid Date'
-  ) {
+  if (slotTime.toString() === 'Invalid Date') {
     return next(
       new GlobalError(
         'Please provide a valid date(DD/MMM/YYYY) and time(HH:MM AM/PM)',
@@ -38,7 +33,7 @@ export const createSlot = asyncHandler(async (req, res, next) => {
     );
   }
 
-  const slot = await Slot.findOne({ slotTime: slotTimeInstance.getTime() });
+  const slot = await Slot.findOne({ slotTime });
 
   if (slot) {
     return next(
@@ -50,8 +45,7 @@ export const createSlot = asyncHandler(async (req, res, next) => {
   }
 
   await Slot.insertOne({
-    slotDate: slotDateInstance.getTime(),
-    slotTime: slotTimeInstance.getTime(),
+    slotTime,
     available: true,
     bookings: [],
   });
@@ -67,15 +61,27 @@ export const getAllSlots = asyncHandler(async (req, res, next) => {
 
   const filter = available ? { available: JSON.parse(available) } : {};
 
-  const slots = await Slot.find(filter)
-    .filter({ slotTime: { $gt: new Date().getTime() } })
-    .sort({ slotDate: 1, slotTime: 1 })
+  const slots = await Slot.find(filter, {
+    projection: {
+      bookings: 0,
+    },
+  })
+    .filter({ slotTime: { $gt: new Date() } })
+    .sort({ slotTime: 1 })
     .toArray();
 
   const groupedSlots = slots.reduce((acc, slot) => {
-    const { _id, slotDate, slotTime, available } = slot;
+    const { _id, slotTime, available } = slot;
 
-    const exitedSlotIndex = acc.findIndex(s => s.slotDate === slotDate);
+    const date = new Date(slotTime);
+
+    const slotDate = new Date(
+      date.toLocaleDateString('en-US', { dateStyle: 'full' })
+    );
+
+    const exitedSlotIndex = acc.findIndex(s => {
+      return s.slotDate.getTime() == slotDate.getTime();
+    });
 
     if (exitedSlotIndex >= 0) {
       acc[exitedSlotIndex].slots.push({
