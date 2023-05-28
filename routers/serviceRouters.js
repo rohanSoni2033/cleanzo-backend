@@ -6,20 +6,11 @@ import {
 import {
   getAllServices,
   getService,
-  createService,
-  updateService,
-  deleteService,
 } from './../controllers/serviceController.js';
 
 const router = Router();
 
 router.get('/', protectRoute, getAllServices);
-router.post('/', protectRoute, createService);
 
-router
-  .route('/:id')
-  .get(protectRoute, getService)
-  .patch(protectRoute, accessPermission('admin'), updateService)
-  .delete(protectRoute, accessPermission('admin'), deleteService);
-
+router.route('/:id').get(protectRoute, accessPermission('admin'), getService);
 export default router;

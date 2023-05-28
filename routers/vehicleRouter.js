@@ -7,7 +7,6 @@ import {
 import {
   getAllVehicles,
   getVehicle,
-  createVehicle,
   updateVehicle,
   deleteVehicle,
 } from '../controllers/vehicleController.js';
@@ -15,10 +14,10 @@ import {
 const router = Router();
 
 router.get('/', protectRoute, getAllVehicles);
-router.post('/', accessPermission('admin'), createVehicle);
+
 router
   .route('/:id')
-  .get(protectRoute, getVehicle)
+  .get(protectRoute, accessPermission('admin'), getVehicle)
   .delete(protectRoute, accessPermission('admin'), deleteVehicle)
   .patch(protectRoute, accessPermission('admin'), updateVehicle);
 

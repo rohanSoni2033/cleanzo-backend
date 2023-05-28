@@ -7,6 +7,7 @@ import {
   updateBooking,
   deleteBooking,
   createBooking,
+  generateBookingOrderId,
 } from './../controllers/bookingController.js';
 
 import {
@@ -15,12 +16,14 @@ import {
 } from '../controllers/authController.js';
 
 router
-  .get('/', protectRoute, accessPermission('admin'), getAllBookings)
-  .post('/', protectRoute, accessPermission('admin', 'user'), createBooking);
+  .get('/', protectRoute, accessPermission('admin', 'user'), getAllBookings)
+  .post('/', protectRoute, createBooking);
+
+router.get('/order-id', protectRoute, generateBookingOrderId);
 
 router
-  .route('/:id')
-  .get(protectRoute, accessPermission('admin'), getBooking)
+  .route('/:bookingId')
+  .get(protectRoute, accessPermission('admin', 'user'), getBooking)
   .patch(protectRoute, accessPermission('admin'), updateBooking)
   .delete(protectRoute, accessPermission('admin'), deleteBooking);
 

@@ -19,7 +19,7 @@ const router = Router();
 router
   .route('/')
   .get(protectRoute, getAllSlots)
-  .post(protectRoute, accessPermission('admin'), createSlot);
+  .post(protectRoute, accessPermission('admin', 'user'), createSlot);
 
 router
   .route('/:id')

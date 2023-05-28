@@ -1,98 +1,74 @@
 import { Router } from 'express';
 
-import {
-  protectRoute,
-  accessPermission,
-  verifyOTPController,
-} from '../controllers/authController.js';
+import { protectRoute, verifyOTP } from '../controllers/authController.js';
 
 import {
-  updateMeController,
-  deleteMeController,
   getMeController,
   updateMobileNumber,
+  updateUserName,
+  addUserAddress,
+  deleteUserAddress,
+  deleteMeController,
 } from '../controllers/meController.js';
 
 import {
   getMyAllBookings,
   getMyBooking,
   deleteMyBooking,
+  createMembershipBooking,
 } from './../controllers/bookingController.js';
 
 import {
-  removeMyVehicle,
   addMyVehicle,
-  getMyVehicles,
+  removeMyVehicle,
 } from './../controllers/vehicleController.js';
-
-// import {
-//   getMyAllMemberships,
-//   getMyMembership,
-//   deleteMyMembership,
-//   updateMyMembership,
-// } from './../controllers/membershipController.js';
-// import { createMembershipBooking } from '../controllers/membershipBookingController.js';
+import { getMyMemberships } from '../controllers/membershipController.js';
 
 const router = Router();
 
 router
   .route('/')
-  .get(protectRoute, accessPermission('admin', 'user'), getMeController)
-  .patch(protectRoute, accessPermission('admin', 'user'), updateMeController)
-  .delete(protectRoute, accessPermission('admin', 'user'), deleteMeController);
+  .get(protectRoute, getMeController)
+  .delete(protectRoute, deleteMeController);
+
+router.patch('/name', protectRoute, updateUserName);
+
+// address
+
+router.post('/address', protectRoute, addUserAddress);
+
+router.delete('/address/:addressId', protectRoute, deleteUserAddress);
 
 // update mobile number
 ///////////////////////////////////////////////////////
 
-router
-  .route('/mobile-number')
-  .patch(protectRoute, accessPermission('admin', 'user'), updateMobileNumber);
+router.patch('/mobile', protectRoute, updateMobileNumber);
 
-router
-  .route('/verify-otp')
-  .post(protectRoute, accessPermission('admin', 'user'), verifyOTPController);
+router.post('/verify-otp', protectRoute, verifyOTP);
 
 // vehicles
 /////////////////////////////////////////////////////
 
-router
-  .route('/vehicles')
-  .get(protectRoute, accessPermission('admin', 'user'), getMyVehicles)
-  .post(protectRoute, accessPermission('admin', 'user'), addMyVehicle);
+router.post('/vehicles', protectRoute, addMyVehicle);
 
 router.delete('/vehicles/:vehicleId', protectRoute, removeMyVehicle);
 
 // bookings
 ////////////////////////////////////////////////////
 
-router
-  .route('/bookings')
-  .get(protectRoute, accessPermission('admin', 'user'), getMyAllBookings);
+router.route('/bookings').get(protectRoute, getMyAllBookings);
 
 router
   .route('/bookings/:bookingId')
-  .get(protectRoute, accessPermission('admin', 'user'), getMyBooking)
-  .delete(protectRoute, accessPermission('admin', 'user'), deleteMyBooking);
+  .get(protectRoute, getMyBooking)
+  .delete(protectRoute, deleteMyBooking);
 
-// memberships
-/////////////////////////////////////////////////////
+router.get('/memberships', protectRoute, getMyMemberships);
 
-// router
-//   .route('/memberships')
-//   .get(protectRoute, accessPermission('admin', 'user'), getMyAllMemberships);
-
-// router
-//   .route('/memberships/:membershipId')
-//   .get(protectRoute, accessPermission('admin', 'user'), getMyMembership)
-//   .delete(protectRoute, accessPermission('admin', 'user'), deleteMyMembership)
-//   .patch(protectRoute, accessPermission('admin', 'user'), updateMyMembership);
-
-// router
-//   .route('/memberships/:membershipId/services/:serviceId/book')
-//   .post(
-//     protectRoute,
-//     accessPermission('admin', 'user'),
-//     createMembershipBooking
-//   );
+router.post(
+  '/memberships/:membershipId/services/:serviceId/book',
+  protectRoute,
+  createMembershipBooking
+);
 
 export default router;
