@@ -9,7 +9,7 @@ class HashError extends Error {
   }
 }
 
-/** 
+/**
  * @params
  * data : Object
  * */
@@ -20,7 +20,7 @@ export const generate = function (data) {
       if (typeof data === 'object') {
         const stringJson = JSON.stringify(data);
         var hash = crypto
-          .createHmac('sha256', 'THIS_IS_SECRET_FOR_NOW')
+          .createHmac('sha256', process.env.hashSecret)
           .update(stringJson)
           .digest('hex');
 
