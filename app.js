@@ -35,6 +35,18 @@ const limit = rateLimit({
   message: 'Too many request from this ip, try again after sometime',
 });
 
+app.use('*', (req, res, next) => {
+  const reqObj = {
+    url: req.url,
+    queries: req.query,
+    params: req.params,
+    method: req.method,
+    body: req.body,
+  };
+
+  console.log(reqObj);
+});
+
 app.use('/api/v1.0', limit);
 app.use(express.json({ limit: '10kb' }));
 
