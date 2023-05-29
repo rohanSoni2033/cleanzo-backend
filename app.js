@@ -45,6 +45,8 @@ app.use('*', (req, res, next) => {
   };
 
   console.log(reqObj);
+
+  next();
 });
 
 app.use('/api/v1.0', limit);
