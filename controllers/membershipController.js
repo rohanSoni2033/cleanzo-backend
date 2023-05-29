@@ -131,22 +131,36 @@ export const createMembership = asyncHandler(async (req, res, next) => {
     );
   }
 
-  const paymentDetails = await Payments.findOne({
+  const payment = await Payments.findOne({
     paymentId: paymentId,
   });
 
-  if (paymentDetails) {
+  if (payment) {
     return next(
       new GlobalError('paymentId is already used', statusCode.PAYMENT_REQUIRED)
     );
   }
 
-  const payment = await razorpay.payments.fetch(paymentId);
+  const paymentDetails = await razorpay.payments.fetch(paymentId);
 
-  const orderDetails = await razorpay.orders.fetch(payment.order_id);
+  if (!paymentDetails) {
+    return next(new GlobalError('payment not found', statusCode.NOT_FOUND));
+  }
 
-  const { membershipPlanId, vehicleId, durationInMonths, userId } =
-    orderDetails.notes;
+  const { notes, method, vpa, email, contact, order_id } = paymentDetails;
+
+  const membershipPaymentId = await Payments.insertOne({
+    paymentId,
+    method,
+    vpa,
+    email,
+    contact,
+    order_id,
+    userId: req.user._id,
+    createdAt: new Date(),
+  });
+
+  const { membershipPlanId, vehicleId, durationInMonths, userId } = notes;
 
   if (user._id.toString() != userId.toString()) {
     return next(
@@ -203,7 +217,7 @@ export const createMembership = asyncHandler(async (req, res, next) => {
     },
     membershipPlanId,
     vehicleId,
-    paymentId: generatedPaymentId,
+    paymentId: membershipPaymentId,
     servicesIncluded,
     expired: false,
     expiresAt: currentDate,

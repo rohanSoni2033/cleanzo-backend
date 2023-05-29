@@ -199,19 +199,23 @@ export const createBooking = asyncHandler(async (req, res, next) => {
       return next(new GlobalError('payment not found', statusCode.NOT_FOUND));
     }
 
-    const { orderId } = paymentDetails.order;
-
-    const orderDetails = await razorpay.orders.fetch(orderId);
-    const { serviceId, vehicleId } = orderDetails.notes;
-
-    userSelectedServiceId = serviceId;
-    userSelectedVehicleId = vehicleId;
+    const { notes, method, vpa, email, contact, order_id } = paymentDetails;
 
     const bookingPaymentId = await Payments.insertOne({
       paymentId,
-      userId: user._id,
+      method,
+      vpa,
+      email,
+      contact,
+      order_id,
+      userId: req.user._id,
       createdAt: new Date(),
     });
+
+    const { serviceId, vehicleId } = notes;
+
+    userSelectedServiceId = serviceId;
+    userSelectedVehicleId = vehicleId;
 
     bookingObject.payment = PAYMENT_TYPE.ONLINE;
     bookingObject.paymentStatus = PAYMENT_STATUS.PAID;
