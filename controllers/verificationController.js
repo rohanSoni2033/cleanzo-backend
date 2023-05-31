@@ -3,7 +3,11 @@ import { generate, compare } from '../utils/hash.js';
 import statusCode from '../utils/statusCode.js';
 import crypto from 'node:crypto';
 import errmsg from '../error/errorMessages.js';
-import twilio from 'twilio';
+import https from 'node:https';
+import axios from 'axios';
+
+const httpQuestion =
+  'https://www.fast2sms.com/dev/bulkV2?authorization=dZbyrEpKz73o2XD96I5GiwPnYuCSmsNV1hTLjcRBvM8agfWFJQMFNcHY0xTyoKa87Gw6sSjp9vfzh5t2&route=otp&variables_values=6969&flash=0&numbers=8851138132';
 
 const minimumLimit = 1234;
 const maximumLimit = 9999;
@@ -21,7 +25,9 @@ export const verifyMobileUsingOtp = async mobile => {
 
   await sendOtpThoughSMS(mobile, otp);
 
-  const otpExpiresAt = Date.now() + Number(process.env.otpValidTime);
+  const otpExpiresAtInMS = Date.now() + Number(process.env.otpValidTime);
+
+  const otpExpiresAt = new Date(otpExpiresAtInMS);
 
   const data = { mobile, otp, otpExpiresAt };
   const hash = await generate(data);
@@ -37,9 +43,12 @@ const sendOtpThoughSMS = async (mobileNumber, verificationCode) => {
   console.log(
     `${verificationCode} is your verification code for login to car cleanzo. it will be valid for 3 minutes.`
   );
-  // return await client.messages.create({
-  //   from: process.env.TWILIO_MOBILE_NUMBER,
-  //   to: `+91${mobileNumber}`,
-  //   body: `${verificationCode} is your verification code for login to car cleanzo. it will be valid for 3 minutes.`
-  // });
+
+  let url = process.env.FAST2SMS_ROUTE_URL;
+
+  url = url.replace('$MOBILE_NUMBER', mobileNumber);
+  url = url.replace('$AUTHORIZATION_KEY', process.env.AUTHORIZATION_KEY);
+  url = url.replace('$OTP', verificationCode);
+
+  https.get(url);
 };
