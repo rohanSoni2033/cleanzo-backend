@@ -56,11 +56,11 @@ export const verifyOTP = asyncHandler(async function (req, res, next) {
   }
 
   const otpIsCorrect = await compare(
-    { mobile, otp: Number(otp), otpExpiresAt: Number(otpExpiresAt) },
+    { mobile, otp: Number(otp), otpExpiresAt: new Date(otpExpiresAt) },
     hash
   );
 
-  if (Date.now() > Number(otpExpiresAt)) {
+  if (new Date() > new Date(otpExpiresAt)) {
     return next(new GlobalError(errmsg.OTP_EXPIRES, statusCode.BAD_REQUEST));
   }
 
