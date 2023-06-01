@@ -7,6 +7,8 @@ export const Vehicle = database.collection('vehicles');
 export const Booking = database.collection('bookings');
 export const User = database.collection('users');
 export const Slot = database.collection('slots');
+export const FAQs = database.collection('faqs');
+export const Location = database.collection('locations');
 
 export const MembershipPlan = database.collection('membershipPlans');
 export const Membership = database.collection('memberships');
