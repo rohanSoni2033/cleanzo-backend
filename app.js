@@ -3,7 +3,6 @@ import rateLimit from 'express-rate-limit';
 import helmet from 'helmet';
 import sanitize from 'express-mongo-sanitize';
 import xss from 'xss-clean';
-import cors from 'cors';
 import GlobalError from './error/GlobalError.js';
 import statusCode from './utils/statusCode.js';
 
@@ -21,7 +20,6 @@ import membershipPlanRouters from './routers/membershipPlanRouters.js';
 
 const app = express();
 
-app.use(cors());
 app.use(helmet());
 app.use(sanitize());
 app.use(xss());
@@ -65,8 +63,6 @@ app.use('/api/v1.0/slots', slotRouters);
 
 app.use('/api/v1.0/membership-plans', membershipPlanRouters);
 app.use('/api/v1.0/memberships', membershipRouters);
-
-app.options('*', cors());
 
 app.use('*', (req, res, next) => {
   return next(
