@@ -67,12 +67,14 @@ export const addUserAddress = asyncHandler(async (req, res, next) => {
 
   const { _id: userId } = req.user;
 
+  const addressId = new ObjectId();
+
   await User.updateOne(
     { _id: new ObjectId(userId) },
     {
       $push: {
         addresses: {
-          id: new ObjectId(),
+          id: addressId,
           name,
           mobile,
           city,
@@ -88,6 +90,10 @@ export const addUserAddress = asyncHandler(async (req, res, next) => {
   res.status(statusCode.OK).json({
     status: 'success',
     ok: true,
+    content: true,
+    data: {
+      addressId,
+    },
   });
 });
 
@@ -108,6 +114,7 @@ export const deleteUserAddress = asyncHandler(async (req, res, next) => {
     res.status(statusCode.OK).json({
       status: 'success',
       ok: true,
+      content: false,
     });
   } else {
     return res.status(statusCode.BAD_REQUEST).json({
@@ -176,6 +183,7 @@ export const updateMobileNumber = asyncHandler(async (req, res, next) => {
   res.status(statusCode.OK).json({
     status: 'success',
     ok: true,
+    content: true,
     data: {
       mobileNumber: newMobileNumber,
       otpExpiresTimestamp,

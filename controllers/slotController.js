@@ -53,11 +53,15 @@ export const createSlot = asyncHandler(async (req, res, next) => {
   res.status(statusCode.CREATED).json({
     status: 'success',
     ok: true,
+    content: false,
   });
 });
 
 export const getAllSlots = asyncHandler(async (req, res, next) => {
   const { available } = req.query;
+  // TODO
+  // update all the slots if the time is over make it not available
+  // filter using date not time
 
   const filter = available ? { available: JSON.parse(available) } : {};
 
@@ -103,9 +107,9 @@ export const getAllSlots = asyncHandler(async (req, res, next) => {
   res.status(statusCode.OK).json({
     status: 'success',
     ok: true,
+    content: true,
     data: {
-      total: slots.length,
-      data: groupedSlots,
+      groupedSlots,
     },
   });
 });
@@ -120,9 +124,9 @@ export const getSlotBookings = asyncHandler(async (req, res, next) => {
   res.status(statusCode.OK).json({
     status: 'success',
     ok: true,
+    content: true,
     data: {
-      length: bookings.length,
-      data: bookings,
+      bookings,
     },
   });
 });

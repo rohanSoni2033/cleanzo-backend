@@ -8,9 +8,9 @@ export const getAll = collection => {
     res.status(statusCode.OK).json({
       status: 'success',
       ok: true,
+      content: true,
       data: {
-        total: results.length,
-        data: results,
+        results,
       },
     });
   });
@@ -23,7 +23,10 @@ export const getOne = collection => {
     res.status(statusCode.OK).json({
       status: 'success',
       ok: true,
-      data: result,
+      content: true,
+      data: {
+        result,
+      },
     });
   });
 };
@@ -35,6 +38,7 @@ export const deleteOne = collection => {
     res.status(statusCode.OK).json({
       status: 'success',
       ok: true,
+      content: false,
     });
   });
 };
@@ -48,6 +52,7 @@ export const updateOne = collection => {
     res.status(statusCode.OK).json({
       status: 'success',
       ok: true,
+      content: false,
     });
   });
 };

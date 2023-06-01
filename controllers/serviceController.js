@@ -84,9 +84,9 @@ export const getAllServices = asyncHandler(async (req, res, next) => {
   res.status(statusCode.OK).json({
     status: 'success',
     ok: true,
+    content: true,
     data: {
-      length: groupedServiceList.length,
-      data: groupedServiceList,
+      groupedServiceList,
     },
   });
 });

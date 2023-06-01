@@ -29,9 +29,9 @@ export const getAllVehicles = asyncHandler(async (req, res, next) => {
   res.status(statusCode.OK).json({
     status: 'success',
     ok: true,
+    content: true,
     data: {
-      length: groupedVehicles.length,
-      data: groupedVehicles,
+      groupedVehicles,
     },
   });
 });
@@ -52,9 +52,9 @@ export const getMyVehicles = asyncHandler(async (req, res, next) => {
   res.status(statusCode.OK).json({
     status: 'success',
     ok: true,
+    content: true,
     data: {
-      length: vehicles.length,
-      data: vehicles,
+      vehicles,
     },
   });
 });
@@ -93,6 +93,7 @@ export const addMyVehicle = asyncHandler(async (req, res, next) => {
     return res.status(statusCode.OK).json({
       ok: true,
       status: 'success',
+      content: false,
     });
   }
 
@@ -116,6 +117,7 @@ export const removeMyVehicle = asyncHandler(async (req, res, next) => {
     return res.status(statusCode.OK).json({
       status: 'success',
       ok: true,
+      content: false,
     });
   }
 

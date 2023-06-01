@@ -37,9 +37,9 @@ export const getAllBookings = asyncHandler(async (req, res, next) => {
   res.status(statusCode.OK).json({
     status: 'success',
     ok: true,
+    content: true,
     data: {
-      length: bookings.length,
-      data: bookings,
+      bookings,
     },
   });
 });
@@ -57,6 +57,7 @@ export const getBooking = asyncHandler(async (req, res, next) => {
   res.status(statusCode.OK).json({
     status: 'success',
     ok: true,
+    content: true,
     data: booking,
   });
 });
@@ -118,6 +119,7 @@ export const generateBookingOrderId = asyncHandler(async (req, res, next) => {
   res.status(statusCode.OK).json({
     status: 'success',
     ok: true,
+    content: true,
     data: {
       orderId: order.id,
       amount: order.amount,
@@ -312,6 +314,7 @@ export const createBooking = asyncHandler(async (req, res, next) => {
   res.status(statusCode.CREATED).json({
     status: 'success',
     ok: true,
+    content: false,
   });
 });
 
@@ -344,6 +347,7 @@ export const deleteBooking = asyncHandler(async (req, res, next) => {
   res.status(statusCode.OK).json({
     status: 'success',
     ok: true,
+    content: false,
   });
 });
 
@@ -377,6 +381,7 @@ export const updateBooking = asyncHandler(async (req, res, next) => {
   res.status(statusCode.OK).json({
     status: 'success',
     ok: true,
+    content: false,
   });
 });
 
@@ -399,9 +404,9 @@ export const getMyAllBookings = asyncHandler(async (req, res, next) => {
   res.status(statusCode.OK).json({
     status: 'success',
     ok: true,
+    content: true,
     data: {
-      length: bookings.length,
-      data: bookings,
+      bookings,
     },
   });
 });
@@ -422,6 +427,7 @@ export const getMyBooking = asyncHandler(async (req, res, next) => {
   res.status(statusCode.OK).json({
     status: 'success',
     ok: true,
+    content: true,
     data: result,
   });
 });
@@ -456,6 +462,7 @@ export const deleteMyBooking = asyncHandler(async (req, res, next) => {
   res.status(statusCode.OK).json({
     status: 'success',
     ok: true,
+    content: false,
   });
 });
 
@@ -573,5 +580,6 @@ export const createMembershipBooking = asyncHandler(async (req, res, next) => {
   res.status(statusCode.CREATED).json({
     status: 'success',
     ok: true,
+    content: false,
   });
 });

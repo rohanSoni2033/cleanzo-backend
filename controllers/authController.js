@@ -9,7 +9,7 @@ import { compare } from './../utils/hash.js';
 
 import { ObjectId } from 'mongodb';
 
-import { User } from './../db/collections.js';
+import { User, FAQs } from './../db/collections.js';
 import { USER_TYPE } from '../utils/constants.js';
 
 export const login = asyncHandler(async function (req, res, next) {
@@ -36,7 +36,12 @@ export const login = asyncHandler(async function (req, res, next) {
   res.status(statusCode.OK).json({
     status: 'success',
     ok: true,
-    data: { hash, mobile, otpExpiresAt },
+    content: true,
+    data: {
+      hash,
+      mobile,
+      otpExpiresAt,
+    },
   });
 });
 
@@ -93,8 +98,10 @@ export const verifyOTP = asyncHandler(async function (req, res, next) {
   return res.status(statusCode.OK).json({
     status: 'success',
     ok: true,
+    content: true,
     data: {
       token,
+      user,
     },
   });
 });
@@ -181,3 +188,18 @@ export const memberLogin = asyncHandler(async (req, res, next) => {
     },
   });
 });
+
+export const getFAQs = asyncHandler(async (req, res, next) => {
+  const faqs = await FAQs.find().toArray();
+
+  res.status(statusCode.OK).json({
+    status: 'success',
+    ok: true,
+    content: true,
+    data: {
+      faqs,
+    },
+  });
+});
+
+export const getAvailableLocations = asyncHandler(async (req, res, next) => {});
