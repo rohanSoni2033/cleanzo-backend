@@ -2,7 +2,6 @@ import express from 'express';
 import rateLimit from 'express-rate-limit';
 import helmet from 'helmet';
 import sanitize from 'express-mongo-sanitize';
-import xss from 'xss-clean';
 import GlobalError from './error/GlobalError.js';
 import statusCode from './utils/statusCode.js';
 
@@ -22,7 +21,6 @@ const app = express();
 
 app.use(helmet());
 app.use(sanitize());
-app.use(xss());
 app.use(express.json());
 
 process.env.TZ = 'Asia/Kolkata';
