@@ -9,9 +9,7 @@ export const getAll = collection => {
       status: 'success',
       ok: true,
       content: true,
-      data: {
-        results,
-      },
+      data: results,
     });
   });
 };
@@ -24,9 +22,7 @@ export const getOne = collection => {
       status: 'success',
       ok: true,
       content: true,
-      data: {
-        result,
-      },
+      data: result,
     });
   });
 };

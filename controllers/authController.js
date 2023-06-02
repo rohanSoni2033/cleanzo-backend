@@ -196,9 +196,7 @@ export const getFAQs = asyncHandler(async (req, res, next) => {
     status: 'success',
     ok: true,
     content: true,
-    data: {
-      faqs,
-    },
+    data: faqs,
   });
 });
 
@@ -209,8 +207,6 @@ export const getAvailableLocations = asyncHandler(async (req, res, next) => {
     status: 'success',
     ok: true,
     content: true,
-    data: {
-      locations,
-    },
+    data: locations,
   });
 });

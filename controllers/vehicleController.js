@@ -30,9 +30,7 @@ export const getAllVehicles = asyncHandler(async (req, res, next) => {
     status: 'success',
     ok: true,
     content: true,
-    data: {
-      groupedVehicles,
-    },
+    data: groupedVehicles,
   });
 });
 
@@ -53,9 +51,7 @@ export const getMyVehicles = asyncHandler(async (req, res, next) => {
     status: 'success',
     ok: true,
     content: true,
-    data: {
-      vehicles,
-    },
+    data: vehicles,
   });
 });
 

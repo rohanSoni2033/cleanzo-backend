@@ -85,8 +85,6 @@ export const getAllServices = asyncHandler(async (req, res, next) => {
     status: 'success',
     ok: true,
     content: true,
-    data: {
-      groupedServiceList,
-    },
+    data: groupedServiceList,
   });
 });

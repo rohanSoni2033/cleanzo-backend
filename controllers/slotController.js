@@ -108,9 +108,7 @@ export const getAllSlots = asyncHandler(async (req, res, next) => {
     status: 'success',
     ok: true,
     content: true,
-    data: {
-      groupedSlots,
-    },
+    data: groupedSlots,
   });
 });
 
@@ -125,9 +123,7 @@ export const getSlotBookings = asyncHandler(async (req, res, next) => {
     status: 'success',
     ok: true,
     content: true,
-    data: {
-      bookings,
-    },
+    data: bookings,
   });
 });
 
