@@ -16,6 +16,7 @@ export const getMeController = asyncHandler(async (req, res, next) => {
   res.status(statusCode.OK).json({
     status: 'success',
     ok: true,
+    content: true,
     data: user,
   });
 });
