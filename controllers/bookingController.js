@@ -247,6 +247,7 @@ export const createBooking = asyncHandler(async (req, res, next) => {
         serviceName: 1,
         serviceBasePrice: 1,
         serviceImageUrl: 1,
+        durationOfService: 1,
       },
     }
   );
@@ -255,7 +256,8 @@ export const createBooking = asyncHandler(async (req, res, next) => {
     return next(new GlobalError('service not found', statusCode.NOT_FOUND));
   }
 
-  const { serviceName, serviceBasePrice, serviceImageUrl } = service;
+  const { serviceName, serviceBasePrice, serviceImageUrl, durationOfService } =
+    service;
 
   const vehicle = await Vehicle.findOne({
     _id: new ObjectId(userSelectedVehicleId),
@@ -266,17 +268,14 @@ export const createBooking = asyncHandler(async (req, res, next) => {
   }
   const { model, logo, additionalServicePrice } = vehicle;
 
-  bookingObject.service = {
-    serviceName,
-    serviceBasePrice,
-    serviceImageUrl,
-  };
+  bookingObject.serviceName = serviceName;
+  bookingObject.serviceBasePrice = serviceBasePrice;
+  bookingObject.serviceImageUrl = serviceImageUrl;
+  bookingObject.durationOfService = durationOfService;
 
-  bookingObject.vehicle = {
-    model,
-    logo,
-    additionalServicePrice,
-  };
+  bookingObject.model = model;
+  bookingObject.logo = logo;
+  bookingObject.additionalServicePrice = additionalServicePrice;
 
   const user = req.user;
 
