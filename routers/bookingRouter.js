@@ -5,7 +5,6 @@ import {
   getAllBookings,
   getBooking,
   updateBooking,
-  deleteBooking,
   createBooking,
   generateBookingOrderId,
 } from './../controllers/bookingController.js';
@@ -24,7 +23,6 @@ router.get('/order-id', protectRoute, generateBookingOrderId);
 router
   .route('/:bookingId')
   .get(protectRoute, accessPermission('admin', 'user'), getBooking)
-  .patch(protectRoute, accessPermission('admin'), updateBooking)
-  .delete(protectRoute, accessPermission('admin'), deleteBooking);
+  .patch(protectRoute, accessPermission('admin'), updateBooking);
 
 export default router;
