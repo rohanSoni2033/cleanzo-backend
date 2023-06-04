@@ -382,14 +382,18 @@ export const getMyAllBookings = asyncHandler(async (req, res, next) => {
 
   bookings.forEach(booking => {
     const slotTime = new Date(booking.slotTime);
-
+    console.log(slotTime.toLocaleString());
     slotTime.setMinutes(
       slotTime.getMinutes() - Number(CANCEL_BOOKING_BEFORE_TIME)
     );
 
+    console.log(slotTime.toLocaleString());
+
     if (slotTime.bookingStatus === BOOKING_STATUS.COMPLETED) {
       booking.cancelable = false;
     }
+
+    console.log(new Date().toLocaleString());
 
     if (new Date().getTime() > slotTime.getTime()) {
       booking.cancelable = false;
