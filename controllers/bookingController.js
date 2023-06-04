@@ -18,6 +18,7 @@ import {
   PAYMENT_STATUS,
   PAYMENT_TYPE,
   BOOKING_STATUS,
+  CANCEL_BOOKING_BEFORE_TIME,
 } from '../utils/constants.js';
 
 import Razorpay from 'razorpay';
@@ -33,6 +34,20 @@ export const getAllBookings = asyncHandler(async (req, res, next) => {
       slotTime: 1,
     })
     .toArray();
+
+  bookings.forEach(booking => {
+    const slotTime = new Date(booking.slotTime);
+    slotTime.setMinutes(slotTime.getMinutes() - 1);
+
+    if (slotTime.bookingStatus === BOOKING_STATUS.COMPLETED) {
+      booking.cancelable = false;
+    }
+    if (new Date().getTime() > slotTime.getTime()) {
+      booking.cancelable = false;
+    } else {
+      booking.cancelable = true;
+    }
+  });
 
   res.status(statusCode.OK).json({
     status: 'success',
@@ -315,39 +330,6 @@ export const createBooking = asyncHandler(async (req, res, next) => {
   });
 });
 
-export const deleteBooking = asyncHandler(async (req, res, next) => {
-  const { bookingId } = req.params;
-  const { userId } = req.body;
-
-  const result = await Booking.updateOne(
-    {
-      _id: new ObjectId(bookingId),
-      'user._id': new ObjectId(userId),
-      bookingStatus: BOOKING_STATUS.PENDING,
-    },
-
-    { $set: { bookingStatus: BOOKING_STATUS.CANCELED } }
-  );
-
-  if (!(result.matchedCount > 0)) {
-    return next(new GlobalError('booking not found', statusCode.NOT_FOUND));
-  }
-
-  if (!(result.modifiedCount > 0)) {
-    return res.status(statusCode.OK).json({
-      status: 'fail',
-      ok: false,
-      message: 'failed to update',
-    });
-  }
-
-  res.status(statusCode.OK).json({
-    status: 'success',
-    ok: true,
-    content: false,
-  });
-});
-
 export const updateBooking = asyncHandler(async (req, res, next) => {
   const { bookingId } = req.params;
 
@@ -398,6 +380,24 @@ export const getMyAllBookings = asyncHandler(async (req, res, next) => {
     .sort({ createdAt: 1 })
     .toArray();
 
+  bookings.forEach(booking => {
+    const slotTime = new Date(booking.slotTime);
+
+    slotTime.setMinutes(
+      slotTime.getMinutes() - Number(CANCEL_BOOKING_BEFORE_TIME)
+    );
+
+    if (slotTime.bookingStatus === BOOKING_STATUS.COMPLETED) {
+      booking.cancelable = false;
+    }
+
+    if (new Date().getTime() > slotTime.getTime()) {
+      booking.cancelable = false;
+    } else {
+      booking.cancelable = true;
+    }
+  });
+
   res.status(statusCode.OK).json({
     status: 'success',
     ok: true,
@@ -431,15 +431,37 @@ export const deleteMyBooking = asyncHandler(async (req, res, next) => {
   const { _id: userId } = req.user;
   const { bookingId } = req.params;
 
+  const booking = await Booking.findOne({
+    _id: new ObjectId(bookingId),
+    'user._id': new ObjectId(userId),
+    bookingStatus: BOOKING_STATUS.PENDING,
+  });
+
+  if (!booking) {
+    return next(new GlobalError('booking not found', statusCode.NOT_FOUND));
+  }
+
+  const slotTime = new Date(booking.slotTime);
+
+  slotTime.setMinutes(
+    slotTime.getMinutes() - Number(CANCEL_BOOKING_BEFORE_TIME)
+  );
+
+  const currentTime = new Date();
+
+  if (currentTime.getTime() > slotTime.getTime()) {
+    return next(
+      new GlobalError('cannot cancel this booking', statusCode.BAD_REQUEST)
+    );
+  }
+
   const result = await Booking.updateOne(
     {
       _id: new ObjectId(bookingId),
-      'user._id': userId,
-      bookingStatus: BOOKING_STATUS.PENDING,
+      'user._id': new ObjectId(userId),
     },
-    {
-      $set: { bookingStatus: BOOKING_STATUS.CANCELED },
-    }
+
+    { $set: { bookingStatus: BOOKING_STATUS.CANCELED } }
   );
 
   if (!(result.matchedCount > 0)) {
