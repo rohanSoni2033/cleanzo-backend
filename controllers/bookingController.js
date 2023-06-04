@@ -388,13 +388,10 @@ export const getMyAllBookings = asyncHandler(async (req, res, next) => {
     );
 
     if (
+      new Date().getTime() > slotTime.getTime() ||
       booking.bookingStatus === BOOKING_STATUS.COMPLETED ||
       booking.bookingStatus === BOOKING_STATUS.CANCELLED
     ) {
-      booking.cancellable = false;
-    }
-
-    if (new Date().getTime() > slotTime.getTime()) {
       booking.cancellable = false;
     } else {
       booking.cancellable = true;
