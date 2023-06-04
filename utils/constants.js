@@ -34,3 +34,6 @@ const businessRelatedData = await BusinessRelated.findOne({
 
 export const MAXIMUM_BOOKING_PER_SLOT =
   businessRelatedData.maximumBookingPerSlot;
+
+export const CANCEL_BOOKING_BEFORE_TIME =
+  businessRelatedData.cancelBookingBeforeTime;
