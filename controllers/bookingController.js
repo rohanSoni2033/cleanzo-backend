@@ -461,7 +461,7 @@ export const deleteMyBooking = asyncHandler(async (req, res, next) => {
       'user._id': new ObjectId(userId),
     },
 
-    { $set: { bookingStatus: BOOKING_STATUS.CANCELED } }
+    { $set: { bookingStatus: BOOKING_STATUS.CANCELLED } }
   );
 
   if (!(result.matchedCount > 0)) {
