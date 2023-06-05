@@ -3,35 +3,59 @@ import GlobalError from '../error/GlobalError.js';
 import asyncHandler from '../utils/asyncHandler.js';
 import statusCode from '../utils/statusCode.js';
 import { Service, Vehicle } from '../db/collections.js';
-
+import { SERVICE_FOR } from '../utils/constants.js';
 import { getOne } from './factoryController.js';
 
 export const getService = getOne(Service);
 
 export const getAllServices = asyncHandler(async (req, res, next) => {
-  const { vehicleId } = req.query;
+  const { serviceFor } = req.query;
 
-  if (!vehicleId) {
+  if (!serviceFor) {
     return next(
-      new GlobalError('Please provide the vehicle id', statusCode.BAD_REQUEST)
+      new GlobalError('please define the vehicle type', statusCode.BAD_REQUEST)
     );
   }
 
-  const vehicle = await Vehicle.findOne({ _id: new ObjectId(vehicleId) });
+  let servicesList;
 
-  if (!vehicle) {
-    return next(
-      new GlobalError('Vehicle not found with this id', statusCode.NOT_FOUND)
-    );
+  if (serviceFor === SERVICE_FOR.BIKE) {
+    servicesList = await Service.find({
+      serviceFor,
+    }).toArray();
   }
 
-  const servicesList = await Service.find().toArray();
+  if (serviceFor === SERVICE_FOR.CAR) {
+    const { vehicleId } = req.query;
 
-  servicesList.forEach(service => {
-    service.totalPrice =
-      service.serviceBasePrice + vehicle.additionalServicePrice;
-    delete service.serviceBasePrice;
-  });
+    if (!vehicleId) {
+      return next(
+        new GlobalError('Please provide the vehicle id', statusCode.BAD_REQUEST)
+      );
+    }
+
+    const vehicle = await Vehicle.findOne({ _id: new ObjectId(vehicleId) });
+
+    if (!vehicle) {
+      return next(
+        new GlobalError('Vehicle not found with this id', statusCode.NOT_FOUND)
+      );
+    }
+
+    servicesList = await Service.find({
+      serviceFor,
+    }).toArray();
+
+    servicesList.forEach(service => {
+      service.totalPrice =
+        service.serviceBasePrice + vehicle.additionalServicePrice;
+
+      service.regularPrice =
+        service.regularPrice + vehicle.additionalServicePrice;
+
+      delete service.serviceBasePrice;
+    });
+  }
 
   const groupedServiceList = servicesList.reduce((acc, service) => {
     const {
@@ -44,6 +68,7 @@ export const getAllServices = asyncHandler(async (req, res, next) => {
       serviceImageUrl,
       serviceDetails,
       totalPrice,
+      regularPrice,
     } = service;
 
     const existingServiceIndex = acc.findIndex(
@@ -59,6 +84,7 @@ export const getAllServices = asyncHandler(async (req, res, next) => {
         serviceImageUrl,
         serviceDetails,
         totalPrice,
+        regularPrice,
       });
     } else {
       acc.push({
@@ -73,6 +99,7 @@ export const getAllServices = asyncHandler(async (req, res, next) => {
             serviceImageUrl,
             serviceDetails,
             totalPrice,
+            regularPrice,
           },
         ],
       });
@@ -81,7 +108,7 @@ export const getAllServices = asyncHandler(async (req, res, next) => {
     return acc;
   }, []);
 
-  res.status(statusCode.OK).json({
+  return res.status(statusCode.OK).json({
     status: 'success',
     ok: true,
     content: true,

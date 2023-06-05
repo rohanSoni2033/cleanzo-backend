@@ -46,7 +46,7 @@ export const login = asyncHandler(async function (req, res, next) {
 });
 
 export const verifyOTP = asyncHandler(async function (req, res, next) {
-  const { mobile, otp, otpExpiresAt, hash } = req.body;
+  const { mobile, otp, otpExpiresAt, hash, deviceToken } = req.body;
 
   if (!mobile) {
     return next(
@@ -54,7 +54,7 @@ export const verifyOTP = asyncHandler(async function (req, res, next) {
     );
   }
 
-  if (!otp || !otpExpiresAt || !hash) {
+  if (!otp || !otpExpiresAt || !hash || !deviceToken) {
     return next(
       new GlobalError(errmsg.REQUIRED_FIELDS_MISSING, statusCode.BAD_REQUEST)
     );
@@ -86,6 +86,7 @@ export const verifyOTP = asyncHandler(async function (req, res, next) {
       createdAt: new Date(),
       vehicles: [],
       addresses: [],
+      deviceToken,
     });
 
     userId = insertedId;

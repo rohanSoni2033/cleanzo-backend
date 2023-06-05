@@ -19,10 +19,12 @@ import {
   PAYMENT_TYPE,
   BOOKING_STATUS,
   CANCEL_BOOKING_BEFORE_TIME,
+  SERVICE_FOR,
 } from '../utils/constants.js';
 
 import Razorpay from 'razorpay';
 import {} from '../db/collections.js';
+import pushNotification from '../utils/pushNotification.js';
 
 export const getAllBookings = asyncHandler(async (req, res, next) => {
   const { bookingStatus } = req.query;
@@ -181,7 +183,7 @@ export const createBooking = asyncHandler(async (req, res, next) => {
 
   bookingObject.slotTime = slot.slotTime;
 
-  let userSelectedServiceId, userSelectedVehicleId;
+  let userSelectedServiceId;
 
   if (onlinePayment) {
     const { paymentId } = req.body;
@@ -236,20 +238,16 @@ export const createBooking = asyncHandler(async (req, res, next) => {
     bookingObject.paymentStatus = PAYMENT_STATUS.PAID;
     bookingObject.paymentId = bookingPaymentId;
   } else {
-    const { serviceId, vehicleId } = req.body;
+    const { serviceId } = req.body;
     userSelectedServiceId = serviceId;
-    userSelectedVehicleId = vehicleId;
 
     bookingObject.payment = PAYMENT_TYPE.OFFLINE;
     bookingObject.paymentStatus = PAYMENT_STATUS.NOT_PAID;
   }
 
-  if (!userSelectedServiceId || !userSelectedVehicleId) {
+  if (!userSelectedServiceId) {
     return next(
-      new GlobalError(
-        'Please provide all the required fields',
-        statusCode.BAD_REQUEST
-      )
+      new GlobalError('Please provide the service id', statusCode.BAD_REQUEST)
     );
   }
 
@@ -263,6 +261,7 @@ export const createBooking = asyncHandler(async (req, res, next) => {
         serviceBasePrice: 1,
         serviceImageUrl: 1,
         durationOfService: 1,
+        serviceFor: 1,
       },
     }
   );
@@ -271,26 +270,44 @@ export const createBooking = asyncHandler(async (req, res, next) => {
     return next(new GlobalError('service not found', statusCode.NOT_FOUND));
   }
 
-  const { serviceName, serviceBasePrice, serviceImageUrl, durationOfService } =
-    service;
-
-  const vehicle = await Vehicle.findOne({
-    _id: new ObjectId(userSelectedVehicleId),
-  });
-
-  if (!vehicle) {
-    return next(new GlobalError('vehicle not found', statusCode.NOT_FOUND));
-  }
-  const { model, logo, additionalServicePrice } = vehicle;
+  const {
+    serviceName,
+    serviceBasePrice,
+    serviceImageUrl,
+    durationOfService,
+    serviceFor,
+  } = service;
 
   bookingObject.serviceName = serviceName;
   bookingObject.serviceBasePrice = serviceBasePrice;
   bookingObject.serviceImageUrl = serviceImageUrl;
   bookingObject.durationOfService = durationOfService;
 
-  bookingObject.model = model;
-  bookingObject.logo = logo;
-  bookingObject.additionalServicePrice = additionalServicePrice;
+  if (serviceFor != SERVICE_FOR.BIKE) {
+    const { vehicleId } = req.body;
+
+    if (!vehicleId) {
+      return next(
+        new GlobalError('Please define the vehicle id', statusCode.BAD_REQUEST)
+      );
+    }
+
+    const vehicle = await Vehicle.findOne({
+      _id: new ObjectId(vehicleId),
+    });
+
+    if (!vehicle) {
+      return next(new GlobalError('vehicle not found', statusCode.NOT_FOUND));
+    }
+    const { model, logo, additionalServicePrice } = vehicle;
+
+    bookingObject.model = model;
+    bookingObject.logo = logo;
+    bookingObject.additionalServicePrice = additionalServicePrice;
+    bookingObject.totalPrice = serviceBasePrice + additionalServicePrice;
+  } else {
+    bookingObject.totalPrice = serviceBasePrice;
+  }
 
   const user = req.user;
 
@@ -301,8 +318,14 @@ export const createBooking = asyncHandler(async (req, res, next) => {
     mobile: user.mobile,
   };
 
-  bookingObject.totalPrice = serviceBasePrice + additionalServicePrice;
   bookingObject.bookingStatus = BOOKING_STATUS.PENDING;
+
+  await pushNotification(
+    user.deviceToken,
+    '😉 booking confirmed',
+    `your booking for ${serviceName} is confirmed 👍`
+  );
+
   bookingObject.createdAt = new Date();
 
   const { insertedId } = await Booking.insertOne(bookingObject);
@@ -475,6 +498,12 @@ export const deleteMyBooking = asyncHandler(async (req, res, next) => {
       message: 'failed to update',
     });
   }
+
+  await pushNotification(
+    user.deviceToken,
+    'booking cancelled',
+    `your booking for ${serviceName} is cancelled`
+  );
 
   res.status(statusCode.OK).json({
     status: 'success',

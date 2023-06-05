@@ -59,9 +59,6 @@ export const createSlot = asyncHandler(async (req, res, next) => {
 
 export const getAllSlots = asyncHandler(async (req, res, next) => {
   const { available } = req.query;
-  // TODO
-  // update all the slots if the time is over make it not available
-  // filter using date not time
 
   const filter = available ? { available: JSON.parse(available) } : {};
 
