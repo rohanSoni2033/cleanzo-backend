@@ -4,6 +4,11 @@ export const USER_TYPE = {
   USER: 'user',
 };
 
+export const SERVICE_FOR = {
+  CAR: 'car',
+  BIKE: 'bike',
+};
+
 export const BOOKING_STATUS = {
   PENDING: 'pending',
   COMPLETED: 'completed',
