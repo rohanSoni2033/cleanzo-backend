@@ -4,7 +4,7 @@ import helmet from 'helmet';
 import sanitize from 'express-mongo-sanitize';
 import GlobalError from './error/GlobalError.js';
 import statusCode from './utils/statusCode.js';
-
+import fs from 'node:fs';
 import authRouters from './routers/authRouters.js';
 import serviceCategoryRouters from './routers/serviceCategoryRouters.js';
 import serviceRouters from './routers/serviceRouters.js';
@@ -16,8 +16,9 @@ import vehicleRouters from './routers/vehicleRouter.js';
 
 import membershipRouters from './routers/membershipRouters.js';
 import membershipPlanRouters from './routers/membershipPlanRouters.js';
-import { FAQs } from './db/collections.js';
+import { FAQs, User } from './db/collections.js';
 import pushNotification from './utils/pushNotification.js';
+import { ObjectId } from 'mongodb';
 const app = express();
 
 app.use(helmet());
@@ -49,12 +50,28 @@ app.use('*', (req, res, next) => {
 app.use('/api/v1.0', limit);
 app.use(express.json({ limit: '10kb' }));
 
+app.post('/api/v1.0/notification', async (req, res, next) => {
+  const { title, body } = req.query;
+  const { userId } = req.body;
+
+  const user = await User.findOne({
+    _id: new ObjectId(userId),
+  });
+
+  await pushNotification(user.deviceToken, title, body);
+
+  res.status(statusCode.OK).json({
+    status: 'success',
+    ok: true,
+  });
+});
+
 app.use('/api/v1.0/faqs', async (req, res, next) => {
   const faqs = await FAQs.find().toArray();
   res.status(statusCode.OK).json({
     status: 'success',
     ok: true,
-    content: false,
+    content: true,
     data: faqs,
   });
 });
