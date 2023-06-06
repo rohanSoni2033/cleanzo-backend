@@ -54,7 +54,7 @@ export const verifyOTP = asyncHandler(async function (req, res, next) {
     );
   }
 
-  if (!otp || !otpExpiresAt || !hash || !deviceToken) {
+  if (!otp || !otpExpiresAt || !hash) {
     return next(
       new GlobalError(errmsg.REQUIRED_FIELDS_MISSING, statusCode.BAD_REQUEST)
     );

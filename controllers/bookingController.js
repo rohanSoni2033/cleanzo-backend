@@ -320,11 +320,13 @@ export const createBooking = asyncHandler(async (req, res, next) => {
 
   bookingObject.bookingStatus = BOOKING_STATUS.PENDING;
 
-  await pushNotification(
-    user.deviceToken,
-    '😉 booking confirmed',
-    `your booking for ${serviceName} is confirmed 👍`
-  );
+  if (user.deviceToken) {
+    await pushNotification(
+      user.deviceToken,
+      '😉 booking confirmed',
+      `your booking for ${serviceName} is confirmed 👍`
+    );
+  }
 
   bookingObject.createdAt = new Date();
 

@@ -23,6 +23,13 @@ export const getAllServices = asyncHandler(async (req, res, next) => {
     servicesList = await Service.find({
       serviceFor,
     }).toArray();
+
+    servicesList.forEach(service => {
+      service.totalPrice = service.serviceBasePrice;
+      service.regularPrice = service.regularPrice;
+
+      delete service.serviceBasePrice;
+    });
   }
 
   if (serviceFor === SERVICE_FOR.CAR) {
